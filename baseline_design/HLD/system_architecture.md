@@ -63,14 +63,14 @@ flowchart TB
     end
 
     %% Presentation Tier Links
-    Browser -->|HTTP GET/POST /petstore/*| MainServlet
-    Browser -->|HTTP GET /petstore/*.screen| TemplateServlet
+    Browser -->|"HTTP GET/POST /petstore/*"| MainServlet
+    Browser -->|"HTTP GET /petstore/*.screen"| TemplateServlet
     TemplateServlet --> JSPViews
     MainServlet --> ShoppingClientFacade
     JSPViews --> CatalogHelper
 
     %% Fast Lane Reader Pattern
-    CatalogHelper -.->|Direct FastLane JDBC DAO| PetStoreDB
+    CatalogHelper -.->|"Direct FastLane JDBC DAO"| PetStoreDB
 
     %% Business Links
     ShoppingClientFacade --> ShoppingController
@@ -86,23 +86,23 @@ flowchart TB
     AccountEJB --> CreditCardEJB
 
     %% JMS Links
-    AsyncSender -->|JMS ObjectMessage| OrderQueue
+    AsyncSender -->|"JMS ObjectMessage"| OrderQueue
     OrderQueue --> OrderApprovalMDB
-    OrderApprovalMDB -->|Approved| OrderApprovalQueue
+    OrderApprovalMDB -->|"Approved"| OrderApprovalQueue
     OrderApprovalQueue --> PurchaseOrderMDB
-    PurchaseOrderMDB -->|Purchase Order| PurchaseOrderQueue
+    PurchaseOrderMDB -->|"Purchase Order"| PurchaseOrderQueue
     PurchaseOrderQueue --> SupplierOrderMDB
-    SupplierOrderMDB -->|Invoice Published| InvoiceTopic
+    SupplierOrderMDB -->|"Invoice Published"| InvoiceTopic
     InvoiceTopic --> InvoiceMDB
     InvoiceTopic --> MailInvoiceMDB
-    MailInvoiceMDB -->|Mail Request| MailQueue
+    MailInvoiceMDB -->|"Mail Request"| MailQueue
 
     %% Database Links
-    CMPBeans -->|Container Managed JDBC| PetStoreDB
-    OrderApprovalMDB -->|JDBC| OPCDB
-    PurchaseOrderMDB -->|JDBC| OPCDB
-    SupplierOrderMDB -->|JDBC| SupplierDB
-    UIDGen -->|JDBC| PetStoreDB
+    CMPBeans -->|"Container Managed JDBC"| PetStoreDB
+    OrderApprovalMDB -->|"JDBC"| OPCDB
+    PurchaseOrderMDB -->|"JDBC"| OPCDB
+    SupplierOrderMDB -->|"JDBC"| SupplierDB
+    UIDGen -->|"JDBC"| PetStoreDB
 ```
 
 ---

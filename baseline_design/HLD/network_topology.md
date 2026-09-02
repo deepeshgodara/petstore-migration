@@ -38,16 +38,16 @@ flowchart TB
     end
 
     %% Network Connections
-    ClientBrowser -->|HTTP TCP:8080 /petstore| FirewallExt
-    AdminUser -->|HTTP TCP:8080 /admin| FirewallExt
+    ClientBrowser -->|"HTTP TCP:8080 /petstore"| FirewallExt
+    AdminUser -->|"HTTP TCP:8080 /admin"| FirewallExt
     FirewallExt --> HTTPListener
 
     HTTPListener --> WebContainer
-    WebContainer -->|Internal RMI/JNDI Local References| EJBContainer
-    EJBContainer -->|JMS OpenWire TCP:61616 or VM Direct| ActiveMQBroker
+    WebContainer -->|"Internal RMI/JNDI Local References"| EJBContainer
+    EJBContainer -->|"JMS OpenWire TCP:61616 or VM Direct"| ActiveMQBroker
 
     EJBContainer --> FirewallInt
-    WebContainer -.->|FastLane Direct JDBC| FirewallInt
+    WebContainer -.->|"FastLane Direct JDBC"| FirewallInt
     FirewallInt --> DerbyListener
     DerbyListener --> PetStoreDB
     DerbyListener --> OPCDB

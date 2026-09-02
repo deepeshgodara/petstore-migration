@@ -57,14 +57,14 @@ graph TD
     PetStoreWAR --> CartEJB
     PetStoreWAR --> CatalogEJB
     PetStoreEJB --> AsyncSenderEJB
-    AsyncSenderEJB -->|Produce| Q_Order
+    AsyncSenderEJB -->|"Produce"| Q_Order
 
-    Q_Order -->|Consume| OPCEJB
-    OPCEJB -->|Produce| Q_PO
-    Q_PO -->|Consume| SupplierEJB
-    SupplierEJB -->|Publish| T_Invoice
-    T_Invoice -->|Subscribe| OPCEJB
-    OPCEJB -->|Produce| Q_Mail
+    Q_Order -->|"Consume"| OPCEJB
+    OPCEJB -->|"Produce"| Q_PO
+    Q_PO -->|"Consume"| SupplierEJB
+    SupplierEJB -->|"Publish"| T_Invoice
+    T_Invoice -->|"Subscribe"| OPCEJB
+    OPCEJB -->|"Produce"| Q_Mail
 
     PetStoreEAR --> DB_PetStore
     OPCEAR --> DB_OPC

@@ -10,27 +10,27 @@ The Level 0 diagram defines the system boundary and the interactions with extern
 
 ```mermaid
 flowchart LR
-    Shopper((Shopper / Customer))
-    Admin((Administrator))
-    Supplier((External Supplier))
+    Shopper["Shopper / Customer"]
+    Admin["Administrator"]
+    Supplier["External Supplier"]
     
     subgraph PetStoreSystem["Pet Store Enterprise System (J2EE 1.3)"]
-        Core[Pet Store Core Application]
+        Core["Pet Store Core Application"]
     end
     
     %% Inbound / Outbound Flows
-    Shopper -->|1. Browse Catalog / Search| Core
-    Shopper -->|2. Manage Cart / Items| Core
-    Shopper -->|3. Sign In / Register| Core
-    Shopper -->|4. Submit Order & Payment| Core
-    Core -->|5. Order Confirmation & Email| Shopper
+    Shopper -->|"1. Browse Catalog / Search"| Core
+    Shopper -->|"2. Manage Cart / Items"| Core
+    Shopper -->|"3. Sign In / Register"| Core
+    Shopper -->|"4. Submit Order & Payment"| Core
+    Core -->|"5. Order Confirmation & Email"| Shopper
     
-    Admin -->|6. Review Pending Orders| Core
-    Admin -->|7. Approve / Cancel Order| Core
+    Admin -->|"6. Review Pending Orders"| Core
+    Admin -->|"7. Approve / Cancel Order"| Core
     
-    Core -->|8. Dispatch Purchase Order (PO)| Supplier
-    Supplier -->|9. Order Fulfillment & Invoices| Core
-    Supplier -->|10. Restock Notifications| Core
+    Core -->|"8. Dispatch Purchase Order (PO)"| Supplier
+    Supplier -->|"9. Order Fulfillment & Invoices"| Core
+    Supplier -->|"10. Restock Notifications"| Core
 ```
 
 ---
@@ -41,8 +41,8 @@ The Level 1 diagram breaks down internal components: **Catalog Browsing**, **Use
 
 ```mermaid
 flowchart TB
-    Shopper((Shopper))
-    Admin((Administrator))
+    Shopper["Shopper"]
+    Admin["Administrator"]
 
     subgraph Presentation["Presentation Tier (WAF)"]
         P1["1.0 Catalog Browse & Search"]
@@ -78,39 +78,39 @@ flowchart TB
     end
 
     %% Flows
-    Shopper -->|Category / Product Request| P1
-    P1 -->|Fetch Category/Item| B2
-    B2 -->|Direct SQL Query| D1
-    D1 -.->|Result Set| B2
-    B2 -.->|Page Model| P1
+    Shopper -->|"Category / Product Request"| P1
+    P1 -->|"Fetch Category/Item"| B2
+    B2 -->|"Direct SQL Query"| D1
+    D1 -.->|"Result Set"| B2
+    B2 -.->|"Page Model"| P1
 
-    Shopper -->|Credentials| P2
-    P2 -->|Validate User| B1
-    B1 <-->|Read / Write User CMP| D1
+    Shopper -->|"Credentials"| P2
+    P2 -->|"Validate User"| B1
+    B1 <-->|"Read / Write User CMP"| D1
 
-    Shopper -->|Add / Update / Remove Item| P3
-    P3 <-->|Conversational Cart State| P4
+    Shopper -->|"Add / Update / Remove Item"| P3
+    P3 <-->|"Conversational Cart State"| P4
 
-    Shopper -->|Submit Order| P4
-    P4 -->|Create Order| B3
-    B3 -->|Generate ID| D1
-    B3 -->|Publish New Order| Q1
+    Shopper -->|"Submit Order"| P4
+    P4 -->|"Create Order"| B3
+    B3 -->|"Generate ID"| D1
+    B3 -->|"Publish New Order"| Q1
 
-    Q1 -->|Consume Order| M1
-    M1 <-->|Read / Write Order Status| D2
-    M1 -->|Order Approved| Q2
-    Q2 -->|Create PO| Q3
+    Q1 -->|"Consume Order"| M1
+    M1 <-->|"Read / Write Order Status"| D2
+    M1 -->|"Order Approved"| Q2
+    Q2 -->|"Create PO"| Q3
 
-    Q3 -->|Consume PO| M2
-    M2 <-->|Check / Deduct Stock| D3
-    M2 -->|Publish Invoice| Q4
+    Q3 -->|"Consume PO"| M2
+    M2 <-->|"Check / Deduct Stock"| D3
+    M2 -->|"Publish Invoice"| Q4
 
-    Q4 -->|Invoice Event| M1
-    Q4 -->|Invoice Event| M3
-    M3 -->|Queue Email| Q5
-    Q5 -.->|Send SMTP Email| Shopper
+    Q4 -->|"Invoice Event"| M1
+    Q4 -->|"Invoice Event"| M3
+    M3 -->|"Queue Email"| Q5
+    Q5 -.->|"Send SMTP Email"| Shopper
 
-    Admin -->|Review / Update Status| M1
+    Admin -->|"Review / Update Status"| M1
 ```
 
 ---

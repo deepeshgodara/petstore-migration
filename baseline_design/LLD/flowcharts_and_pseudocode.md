@@ -152,19 +152,19 @@ The 2002 Pet Store uses a **Transactional High-Low Block Reservation Algorithm**
 
 ```mermaid
 flowchart TD
-    Start([getNextId sequenceName]) --> CheckCache{currentId < maxIdInBlock?}
+    Start(["getNextId(sequenceName)"]) --> CheckCache{"currentId < maxIdInBlock?"}
     
-    CheckCache -- Yes (In-Memory Block Available) --> IncrementLocal[currentId++]
-    IncrementLocal --> ReturnID([Return currentId])
+    CheckCache -- "Yes (In-Memory Block Available)" --> IncrementLocal["currentId++"]
+    IncrementLocal --> ReturnID(["Return currentId"])
 
-    CheckCache -- No (Block Exhausted) --> StartTx[Start Database Transaction]
-    StartTx --> LockCounter[SELECT counter FROM CounterEJBTable WHERE name=? FOR UPDATE]
-    LockCounter --> ReadDB[Read currentCounter from DB]
-    ReadDB --> ComputeNewMax[newMax = currentCounter + blockSize]
-    ComputeNewMax --> UpdateDB[UPDATE CounterEJBTable SET counter = newMax WHERE name=?]
-    UpdateDB --> CommitTx[Commit Transaction & Release Lock]
+    CheckCache -- "No (Block Exhausted)" --> StartTx["Start Database Transaction"]
+    StartTx --> LockCounter["SELECT counter FROM CounterEJBTable WHERE name=? FOR UPDATE"]
+    LockCounter --> ReadDB["Read currentCounter from DB"]
+    ReadDB --> ComputeNewMax["newMax = currentCounter + blockSize"]
+    ComputeNewMax --> UpdateDB["UPDATE CounterEJBTable SET counter = newMax WHERE name=?"]
+    UpdateDB --> CommitTx["Commit Transaction & Release Lock"]
     
-    CommitTx --> SetMemoryBounds[currentId = currentCounter + 1; maxIdInBlock = newMax]
+    CommitTx --> SetMemoryBounds["currentId = currentCounter + 1; maxIdInBlock = newMax"]
     SetMemoryBounds --> ReturnID
 ```
 

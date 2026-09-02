@@ -44,24 +44,24 @@ flowchart TB
     end
 
     %% Client communication
-    Browser -->|HTTP GET/POST /petstore/*| HttpServer
-    HttpServer -->|Extract/Set PS_SESSION Cookie| SessionManager
+    Browser -->|"HTTP GET/POST /petstore/*"| HttpServer
+    HttpServer -->|"Extract/Set PS_SESSION Cookie"| SessionManager
     SessionManager --> SessionModel
     HttpServer --> Router
-    Router -->|Static GIF/JPG| ImageStreamer
-    ImageStreamer -->|Read from src/apps/petstore/src/docroot/images/| Browser
+    Router -->|"Static GIF/JPG"| ImageStreamer
+    ImageStreamer -->|"Read from docroot/images"| Browser
 
     %% Routing to Views
     Router --> ScreenViews
     ScreenViews --> TemplateEngine
-    TemplateEngine -->|Generated HTML with CSS & JSTL Layout| HttpServer
-    HttpServer -->|HTTP 200 OK or 302 Redirect with Set-Cookie| Browser
+    TemplateEngine -->|"Generated HTML with Layout"| HttpServer
+    HttpServer -->|"HTTP 200 OK or 302 Redirect"| Browser
 
     %% Interaction with Database & Models
     ScreenViews --> CatalogRepo
     ScreenViews --> SessionModel
     SessionModel --> CartModel
-    Router -->|cart.do, order.do, signon.do| DataTier
+    Router -->|"cart.do, order.do, signon.do"| DataTier
     DataParser --> CatalogRepo
     DataParser --> UserRepo
     OrderRepo --> OrderModel
