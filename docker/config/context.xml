@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Context delegate="true">
+    <WatchedResource>WEB-INF/web.xml</WatchedResource>
+
+    <ResourceLink name="url/CatalogDAOSQLURL"
+                  global="url/CatalogDAOSQLURL"
+                  type="java.net.URL" />
+</Context>

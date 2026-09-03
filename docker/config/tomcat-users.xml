@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<tomcat-users>
+  <role rolename="administrator"/>
+  <role rolename="supplier"/>
+  <role rolename="admin"/>
+  <user username="jps_admin" password="admin" roles="administrator,admin"/>
+  <user username="supplier" password="supplier" roles="administrator,supplier"/>
+  <user username="admin" password="admin" roles="administrator,admin"/>
+  <user username="j2ee" password="j2ee" roles="administrator"/>
+</tomcat-users>

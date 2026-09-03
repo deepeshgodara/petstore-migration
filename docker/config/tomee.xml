@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tomee>
+  <Deployments dir="apps" />
+
+  <Container id="Default Stateful Container" type="STATEFUL">
+    AccessTimeout = 0 seconds
+    TimeOut = 0
+    Capacity = 10000
+    BulkPassivate = 0
+  </Container>
+
+  <Container id="Default Stateless Container" type="STATELESS">
+    AccessTimeout = 0 seconds
+    MaxSize = 100
+    MinSize = 10
+  </Container>
+
+  <Container id="Default BMP Container" type="BMP_ENTITY">
+    PoolSize = 100
+  </Container>
+
+  <Container id="Default CMP Container" type="CMP_ENTITY">
+  </Container>
+
+  <Resource id="MyJmsResourceAdapter" type="ActiveMQResourceAdapter">
+    BrokerXmlConfig = broker:(tcp://localhost:61616)?useJmx=false
+    ServerUrl = vm://localhost
+  </Resource>
+
+  <Resource id="jms/QueueConnectionFactory" type="javax.jms.QueueConnectionFactory">
+    ResourceAdapter = MyJmsResourceAdapter
+  </Resource>
+
+  <Resource id="jms/TopicConnectionFactory" type="javax.jms.TopicConnectionFactory">
+    ResourceAdapter = MyJmsResourceAdapter
+  </Resource>
+
+  <Resource id="jdbc/petstore/PetStoreDB" type="DataSource">
+    JdbcDriver = org.hsqldb.jdbcDriver
+    JdbcUrl = jdbc:hsqldb:file:/opt/tomee/data/petstoredb;hsqldb.lock_file=false
+    UserName = sa
+    Password = 
+    JtaManaged = true
+  </Resource>
+
+  <Resource id="jdbc/CatalogDB" type="DataSource">
+    JdbcDriver = org.hsqldb.jdbcDriver
+    JdbcUrl = jdbc:hsqldb:file:/opt/tomee/data/petstoredb;hsqldb.lock_file=false
+    UserName = sa
+    Password = 
+    JtaManaged = true
+  </Resource>
+
+  <Resource id="jdbc/opc/OPCDB" type="DataSource">
+    JdbcDriver = org.hsqldb.jdbcDriver
+    JdbcUrl = jdbc:hsqldb:file:/opt/tomee/data/opcdb;hsqldb.lock_file=false
+    UserName = sa
+    Password = 
+    JtaManaged = true
+  </Resource>
+
+  <Resource id="jdbc/supplier/SupplierDB" type="DataSource">
+    JdbcDriver = org.hsqldb.jdbcDriver
+    JdbcUrl = jdbc:hsqldb:file:/opt/tomee/data/supplierdb;hsqldb.lock_file=false
+    UserName = sa
+    Password = 
+    JtaManaged = true
+  </Resource>
+
+  <Resource id="jms/opc/OrderQueue" type="javax.jms.Queue" />
+  <Resource id="jms/opc/OrderApprovalQueue" type="javax.jms.Queue" />
+  <Resource id="jms/supplier/PurchaseOrderQueue" type="javax.jms.Queue" />
+  <Resource id="jms/opc/InvoiceTopic" type="javax.jms.Topic" />
+  <Resource id="jms/opc/MailQueue" type="javax.jms.Queue" />
+</tomee>
