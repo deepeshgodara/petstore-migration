@@ -1,0 +1,27 @@
+{
+  "category": "storefront",
+  "name": "05_item_rattle_rattlesnake",
+  "description": "Item details page for rattle_rattlesnake (EST-17)",
+  "request": {
+    "method": "GET",
+    "url": "http://localhost:8000/petstore/item.screen?item_id=EST-17",
+    "path": "/petstore/item.screen?item_id=EST-17",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) PetStore-Migration-Recorder",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "body": null
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "Content-Type": "text/html;charset=UTF-8",
+      "Transfer-Encoding": "chunked",
+      "Date": "Fri, 04 Sep 2026 07:06:26 GMT",
+      "Connection": "close",
+      "Server": "Apache TomEE"
+    },
+    "file": "response.html",
+    "content_length": 9697
+  }
+}

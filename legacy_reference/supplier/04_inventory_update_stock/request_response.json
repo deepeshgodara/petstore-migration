@@ -1,0 +1,32 @@
+{
+  "category": "supplier",
+  "name": "04_inventory_update_stock",
+  "description": "Supplier restock item EST-1 to 15000 units",
+  "request": {
+    "method": "POST",
+    "url": "http://localhost:8000/supplier/RcvrRequestProcessor",
+    "path": "/supplier/RcvrRequestProcessor",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) PetStore-Migration-Recorder",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": {
+      "currentScreen": "updateinventory",
+      "item_EST-1": "on",
+      "qty_EST-1": "15000"
+    }
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "Content-Type": "text/html;charset=ISO-8859-1",
+      "Content-Length": "2486",
+      "Date": "Fri, 04 Sep 2026 07:06:26 GMT",
+      "Connection": "close",
+      "Server": "Apache TomEE"
+    },
+    "file": "response.html",
+    "content_length": 2486
+  }
+}

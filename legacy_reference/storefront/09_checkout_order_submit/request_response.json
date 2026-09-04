@@ -1,0 +1,52 @@
+{
+  "category": "storefront",
+  "name": "09_checkout_order_submit",
+  "description": "Submit order form with shipping, billing, and credit card details",
+  "request": {
+    "method": "POST",
+    "url": "http://localhost:8000/petstore/order.do",
+    "path": "/petstore/order.do",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) PetStore-Migration-Recorder",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": {
+      "family_name_a": "Duke",
+      "given_name_a": "Java",
+      "address_1_a": "100 Sun Way",
+      "address_2_a": "",
+      "city_a": "Santa Clara",
+      "state_or_province_a": "CA",
+      "postal_code_a": "95054",
+      "country_a": "USA",
+      "telephone_number_a": "4085551212",
+      "email_a": "duke@sun.com",
+      "family_name_b": "Duke",
+      "given_name_b": "Java",
+      "address_1_b": "100 Sun Way",
+      "address_2_b": "",
+      "city_b": "Santa Clara",
+      "state_or_province_b": "CA",
+      "postal_code_b": "95054",
+      "country_b": "USA",
+      "telephone_number_b": "4085551212",
+      "email_b": "duke@sun.com",
+      "credit_card_number": "4111111111111111",
+      "card_type": "Visa",
+      "card_expiry": "12/05"
+    }
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "Content-Type": "text/html;charset=UTF-8",
+      "Transfer-Encoding": "chunked",
+      "Date": "Fri, 04 Sep 2026 07:06:26 GMT",
+      "Connection": "close",
+      "Server": "Apache TomEE"
+    },
+    "file": "response.html",
+    "content_length": 15098
+  }
+}

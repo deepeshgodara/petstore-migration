@@ -1,0 +1,34 @@
+{
+  "category": "admin",
+  "name": "02_auth_submit",
+  "description": "Admin authentication POST (jps_admin/admin)",
+  "request": {
+    "method": "POST",
+    "url": "http://localhost:8000/admin/j_security_check",
+    "path": "/admin/j_security_check",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) PetStore-Migration-Recorder",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": {
+      "j_username": "jps_admin",
+      "j_password": "admin"
+    }
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "Set-Cookie": "JSESSIONID=5ED1FC6040913882FC268B2F50089DBD; Path=/admin; HttpOnly",
+      "Cache-Control": "private",
+      "Expires": "Thu, 01 Jan 1970 00:00:00 UTC",
+      "Content-Type": "text/html;charset=ISO-8859-1",
+      "Content-Length": "1414",
+      "Date": "Fri, 04 Sep 2026 07:06:26 GMT",
+      "Connection": "close",
+      "Server": "Apache TomEE"
+    },
+    "file": "response.html",
+    "content_length": 1414
+  }
+}

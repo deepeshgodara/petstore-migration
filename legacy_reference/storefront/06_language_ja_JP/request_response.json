@@ -1,0 +1,33 @@
+{
+  "category": "storefront",
+  "name": "06_language_ja_JP",
+  "description": "Switch UI language to Japanese (ja_JP)",
+  "request": {
+    "method": "POST",
+    "url": "http://localhost:8000/petstore/changelocale.do",
+    "path": "/petstore/changelocale.do",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) PetStore-Migration-Recorder",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": {
+      "locale": "ja_JP",
+      "referring_URL": "main.screen",
+      "referring_screen": "main.screen",
+      "cacheId": "petstore"
+    }
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "Content-Type": "text/html;charset=UTF-8",
+      "Transfer-Encoding": "chunked",
+      "Date": "Fri, 04 Sep 2026 07:06:26 GMT",
+      "Connection": "close",
+      "Server": "Apache TomEE"
+    },
+    "file": "response.html",
+    "content_length": 10750
+  }
+}

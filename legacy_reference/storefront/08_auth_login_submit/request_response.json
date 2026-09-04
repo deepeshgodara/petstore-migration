@@ -1,0 +1,30 @@
+{
+  "category": "storefront",
+  "name": "08_auth_login_submit",
+  "description": "Customer authentication POST (j2ee/j2ee)",
+  "request": {
+    "method": "POST",
+    "url": "http://localhost:8000/petstore/j_signon_check",
+    "path": "/petstore/j_signon_check",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) PetStore-Migration-Recorder",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": {
+      "j_username": "j2ee",
+      "j_password": "j2ee"
+    }
+  },
+  "response": {
+    "status_code": 404,
+    "headers": {
+      "Content-Length": "0",
+      "Date": "Fri, 04 Sep 2026 07:06:26 GMT",
+      "Connection": "close",
+      "Server": "Apache TomEE"
+    },
+    "file": "response.txt",
+    "content_length": 0
+  }
+}

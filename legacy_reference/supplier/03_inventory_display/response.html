@@ -1,0 +1,459 @@
+<!--
+ Copyright 2002 Sun Microsystems, Inc. All rights reserved.
+ 
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 
+ - Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+ 
+ - Redistribution in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in
+   the documentation and/or other materials provided with the
+   distribution.
+ 
+ Neither the name of Sun Microsystems, Inc. or the names of
+ contributors may be used to endorse or promote products derived
+ from this software without specific prior written permission.
+ 
+ This software is provided "AS IS," without a warranty of any
+ kind. ALL EXPRESS OR IMPLIED CONDITIONS, REPRESENTATIONS AND
+ WARRANTIES, INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT, ARE HEREBY
+ EXCLUDED. SUN AND ITS LICENSORS SHALL NOT BE LIABLE FOR ANY DAMAGES
+ SUFFERED BY LICENSEE AS A RESULT OF USING, MODIFYING OR
+ DISTRIBUTING THE SOFTWARE OR ITS DERIVATIVES. IN NO EVENT WILL SUN
+ OR ITS LICENSORS BE LIABLE FOR ANY LOST REVENUE, PROFIT OR DATA, OR
+ FOR DIRECT, INDIRECT, SPECIAL, CONSEQUENTIAL, INCIDENTAL OR
+ PUNITIVE DAMAGES, HOWEVER CAUSED AND REGARDLESS OF THE THEORY OF
+ LIABILITY, ARISING OUT OF THE USE OF OR INABILITY TO USE SOFTWARE,
+ EVEN IF SUN HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+ 
+ You acknowledge that Software is not designed, licensed or intended
+ for use in the design, construction, operation or maintenance of
+ any nuclear facility.
+-->
+
+
+
+
+
+
+
+<html>
+<head>
+      <title>Update Inventory</title>
+</head>
+<body bgcolor="white" text="#000000" link="#0000EE" vlink="#551A8B" alink="#FF0000">
+      <h1>Inventory Update Page</h1>
+      <h3>The existing inventory of all items is displayed below. Please
+          enter the new quantity, check the adjacent box and, when all updates
+	  are done, click "submit" button</h3>
+      <hr width="100%">
+
+
+
+
+
+    <form action="RcvrRequestProcessor" method="post">
+    <input type="hidden" name="currentScreen" value="updateinventory">
+    <input type="hidden" name="action" value="updateinventory">
+
+            <br>
+	    <br>
+	    <table border="0" bgcolor="#336666">
+	    <tr>
+		<td><font color="white" size="3">Item Id</font></td>
+		<td><font color="white" size="3">Existing Quantity</font></td>
+		<td><font color="white" size="3">New Quantity</font></td>
+		<td><font color="white" size="3">Update</font></td>
+	    </tr>
+
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-1</td>
+		<td align="right">15000</td>
+		<td><input type="text"
+			   name="qty_EST-1"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-1" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-10</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-10"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-10" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-11</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-11"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-11" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-12</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-12"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-12" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-13</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-13"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-13" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-14</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-14"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-14" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-15</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-15"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-15" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-16</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-16"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-16" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-17</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-17"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-17" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-18</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-18"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-18" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-19</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-19"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-19" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-2</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-2"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-2" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-20</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-20"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-20" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-21</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-21"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-21" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-22</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-22"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-22" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-23</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-23"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-23" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-24</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-24"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-24" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-25</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-25"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-25" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-26</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-26"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-26" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-27</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-27"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-27" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-28</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-28"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-28" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-29</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-29"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-29" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-3</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-3"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-3" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-4</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-4"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-4" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-5</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-5"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-5" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-6</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-6"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-6" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-7</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-7"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-7" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-8</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-8"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-8" 
+		       value="false"></td>
+		</tr>
+
+
+		<tr bgcolor="#eeebcc">
+		<td align="center">EST-9</td>
+		<td align="right">10000</td>
+		<td><input type="text"
+			   name="qty_EST-9"
+			   size="6"></td>
+		<td align="center">
+    		       <input type=checkbox 
+		       name="item_EST-9" 
+		       value="false"></td>
+		</tr>
+
+            </table>
+	    <br><br>
+	    <input type="image" border="0"
+	           src="images/button_submit.gif" name="button">
+    	    </form>
+
+</body>
+</html>
+

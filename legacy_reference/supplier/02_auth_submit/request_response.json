@@ -1,0 +1,34 @@
+{
+  "category": "supplier",
+  "name": "02_auth_submit",
+  "description": "Supplier authentication POST (supplier/supplier)",
+  "request": {
+    "method": "POST",
+    "url": "http://localhost:8000/supplier/j_security_check",
+    "path": "/supplier/j_security_check",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) PetStore-Migration-Recorder",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    "body": {
+      "j_username": "supplier",
+      "j_password": "supplier"
+    }
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "Set-Cookie": "JSESSIONID=528548D0578E7EFF271D60D9099794F4; Path=/supplier; HttpOnly",
+      "Cache-Control": "private",
+      "Expires": "Thu, 01 Jan 1970 00:00:00 UTC",
+      "Content-Type": "text/html;charset=ISO-8859-1",
+      "Content-Length": "2657",
+      "Date": "Fri, 04 Sep 2026 07:06:26 GMT",
+      "Connection": "close",
+      "Server": "Apache TomEE"
+    },
+    "file": "response.html",
+    "content_length": 2657
+  }
+}

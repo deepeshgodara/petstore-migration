@@ -1,0 +1,338 @@
+<!--
+ Copyright 2002 Sun Microsystems, Inc. All rights reserved.
+ 
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 
+ - Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+ 
+ - Redistribution in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in
+   the documentation and/or other materials provided with the
+   distribution.
+ 
+ Neither the name of Sun Microsystems, Inc. or the names of
+ contributors may be used to endorse or promote products derived
+ from this software without specific prior written permission.
+ 
+ This software is provided "AS IS," without a warranty of any
+ kind. ALL EXPRESS OR IMPLIED CONDITIONS, REPRESENTATIONS AND
+ WARRANTIES, INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT, ARE HEREBY
+ EXCLUDED. SUN AND ITS LICENSORS SHALL NOT BE LIABLE FOR ANY DAMAGES
+ SUFFERED BY LICENSEE AS A RESULT OF USING, MODIFYING OR
+ DISTRIBUTING THE SOFTWARE OR ITS DERIVATIVES. IN NO EVENT WILL SUN
+ OR ITS LICENSORS BE LIABLE FOR ANY LOST REVENUE, PROFIT OR DATA, OR
+ FOR DIRECT, INDIRECT, SPECIAL, CONSEQUENTIAL, INCIDENTAL OR
+ PUNITIVE DAMAGES, HOWEVER CAUSED AND REGARDLESS OF THE THEORY OF
+ LIABILITY, ARISING OUT OF THE USE OF OR INABILITY TO USE SOFTWARE,
+ EVEN IF SUN HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+ 
+ You acknowledge that Software is not designed, licensed or intended
+ for use in the design, construction, operation or maintenance of
+ any nuclear facility.
+-->
+
+
+
+
+<html>
+ <head>
+  <style type="text/css">
+   .petstore {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: small;
+   }
+
+   .petstore_title {
+    font-family: Helvetica, Arial, sans-serif;
+    font-weight: bold;
+    }
+
+   .petstore_footer {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: x-small;
+   }
+
+   .petstore_listing {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: x-small;
+   }
+
+   .petstore_form {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: x-small;
+   }
+  </style>
+  <title>Product</title>
+ </head>
+
+ <body bgcolor="#FFFFFF">
+  <table width="100%" height="100%" border="0" cellpadding="5" cellspacing="0">
+   <tr height="100" valign="top">
+    <td colspan="3">
+
+
+
+
+
+
+
+ <table bgcolor="#FFFFFF" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+   <td align="left" valign="middle">
+    <a href="main.screen">
+     <img src="images/banner_logo.gif" alt="Java Pet Store Demo logo" border="0">
+    </a>
+   </td>
+   <td class="petstore" align="right" valign="middle">
+     <form action="search.screen">
+      <input class="petstore_listing" type="text" name="keywords" size="8">
+      <input class="petstore_listing" type="submit" value="Search">
+    </form>
+    <br>
+    <a href="customer.do">Account</a> | <a href="cart.do">
+     Cart
+    </a>
+     |
+    
+     
+     <a href="signon_welcome.screen">Sign in</a>
+    
+  </td>
+ </tr>
+ <tr>
+  <td align="right" colspan="3">
+    <table>
+     <tr>
+      <td>
+       <form method="POST" action="changelocale.do"> <input type="hidden" name="locale" value="en_US" /> <input type="hidden" name="referring_URL"value="template.jsp"> <input type="hidden" name="referring_screen"value="product.screen"> <input type="hidden" name="cacheId"value="petstore"> <input type="hidden" name="product_id" value="RP-SN-01" /> <input type="hidden" name="petstore_attribute_com.sun.j2ee.blueprints.waf.CURRENT_SCREEN" value="rO0ABXNyADBjb20uc3VuLmoyZWUuYmx1ZXByaW50cy53YWYudmlldy50ZW1wbGF0ZS5TY3JlZW6CSCq2s7Iv+AIAA0wABG5hbWV0ABJMamF2YS9sYW5nL1N0cmluZztMAApwYXJhbWV0ZXJzdAATTGphdmEvdXRpbC9IYXNoTWFwO0wADHRlbXBsYXRlTmFtZXEAfgABeHB0AAdwcm9kdWN0c3IAEWphdmEudXRpbC5IYXNoTWFwBQfawcMWYNEDAAJGAApsb2FkRmFjdG9ySQAJdGhyZXNob2xkeHA/QAAAAAAADHcIAAAAEAAAAAZ0AAZmb290ZXJzcgAzY29tLnN1bi5qMmVlLmJsdWVwcmludHMud2FmLnZpZXcudGVtcGxhdGUuUGFyYW1ldGVyAjrwiffknBgCAANaAAZkaXJlY3RMAANrZXlxAH4AAUwABXZhbHVlcQB+AAF4cABxAH4AB3QACy9mb290ZXIuanNwdAAHc2lkZWJhcnNxAH4ACABxAH4AC3QADC9zaWRlYmFyLmpzcHQABm15bGlzdHNxAH4ACABxAH4ADnQACy9teWxpc3QuanNwdAAGYmFubmVyc3EAfgAIAHEAfgARdAALL2Jhbm5lci5qc3B0AAV0aXRsZXNxAH4ACAFxAH4AFHQAB1Byb2R1Y3R0AARib2R5c3EAfgAIAHEAfgAXdAAML3Byb2R1Y3QuanNweHQAAA==" /> <input alt="Change the Language to English" type="image" src="images/us_flag.gif"/></form>
+      </td>
+      <td>&nbsp;</td>
+      <td align="middle">
+      <form method="POST" action="changelocale.do"> <input type="hidden" name="locale" value="ja_JP" /> <input type="hidden" name="referring_URL"value="template.jsp"> <input type="hidden" name="referring_screen"value="product.screen"> <input type="hidden" name="cacheId"value="petstore"> <input type="hidden" name="product_id" value="RP-SN-01" /> <input type="hidden" name="petstore_attribute_com.sun.j2ee.blueprints.waf.CURRENT_SCREEN" value="rO0ABXNyADBjb20uc3VuLmoyZWUuYmx1ZXByaW50cy53YWYudmlldy50ZW1wbGF0ZS5TY3JlZW6CSCq2s7Iv+AIAA0wABG5hbWV0ABJMamF2YS9sYW5nL1N0cmluZztMAApwYXJhbWV0ZXJzdAATTGphdmEvdXRpbC9IYXNoTWFwO0wADHRlbXBsYXRlTmFtZXEAfgABeHB0AAdwcm9kdWN0c3IAEWphdmEudXRpbC5IYXNoTWFwBQfawcMWYNEDAAJGAApsb2FkRmFjdG9ySQAJdGhyZXNob2xkeHA/QAAAAAAADHcIAAAAEAAAAAZ0AAZmb290ZXJzcgAzY29tLnN1bi5qMmVlLmJsdWVwcmludHMud2FmLnZpZXcudGVtcGxhdGUuUGFyYW1ldGVyAjrwiffknBgCAANaAAZkaXJlY3RMAANrZXlxAH4AAUwABXZhbHVlcQB+AAF4cABxAH4AB3QACy9mb290ZXIuanNwdAAHc2lkZWJhcnNxAH4ACABxAH4AC3QADC9zaWRlYmFyLmpzcHQABm15bGlzdHNxAH4ACABxAH4ADnQACy9teWxpc3QuanNwdAAGYmFubmVyc3EAfgAIAHEAfgARdAALL2Jhbm5lci5qc3B0AAV0aXRsZXNxAH4ACAFxAH4AFHQAB1Byb2R1Y3R0AARib2R5c3EAfgAIAHEAfgAXdAAML3Byb2R1Y3QuanNweHQAAA==" /> <input alt="Change the Language to Japanese" type="image" src="images/ja_flag.gif"/></form>
+     </td>
+     <td>&nbsp;</td>
+      <td align="right">
+      <form method="POST" action="changelocale.do"> <input type="hidden" name="locale" value="zh_CN" /> <input type="hidden" name="referring_URL"value="template.jsp"> <input type="hidden" name="referring_screen"value="product.screen"> <input type="hidden" name="cacheId"value="petstore"> <input type="hidden" name="product_id" value="RP-SN-01" /> <input type="hidden" name="petstore_attribute_com.sun.j2ee.blueprints.waf.CURRENT_SCREEN" value="rO0ABXNyADBjb20uc3VuLmoyZWUuYmx1ZXByaW50cy53YWYudmlldy50ZW1wbGF0ZS5TY3JlZW6CSCq2s7Iv+AIAA0wABG5hbWV0ABJMamF2YS9sYW5nL1N0cmluZztMAApwYXJhbWV0ZXJzdAATTGphdmEvdXRpbC9IYXNoTWFwO0wADHRlbXBsYXRlTmFtZXEAfgABeHB0AAdwcm9kdWN0c3IAEWphdmEudXRpbC5IYXNoTWFwBQfawcMWYNEDAAJGAApsb2FkRmFjdG9ySQAJdGhyZXNob2xkeHA/QAAAAAAADHcIAAAAEAAAAAZ0AAZmb290ZXJzcgAzY29tLnN1bi5qMmVlLmJsdWVwcmludHMud2FmLnZpZXcudGVtcGxhdGUuUGFyYW1ldGVyAjrwiffknBgCAANaAAZkaXJlY3RMAANrZXlxAH4AAUwABXZhbHVlcQB+AAF4cABxAH4AB3QACy9mb290ZXIuanNwdAAHc2lkZWJhcnNxAH4ACABxAH4AC3QADC9zaWRlYmFyLmpzcHQABm15bGlzdHNxAH4ACABxAH4ADnQACy9teWxpc3QuanNwdAAGYmFubmVyc3EAfgAIAHEAfgARdAALL2Jhbm5lci5qc3B0AAV0aXRsZXNxAH4ACAFxAH4AFHQAB1Byb2R1Y3R0AARib2R5c3EAfgAIAHEAfgAXdAAML3Byb2R1Y3QuanNweHQAAA==" /> <input alt="Change the Language to Chinese" type="image" src="images/zh_flag.gif"/></form>
+     </td>
+    </tr>
+   </table>
+   </td>
+  </tr>
+  <tr>
+   <td colspan="2">
+    <hr noshade="noshade" size="1">
+   </td>
+  </tr>
+ </table></td>
+   </tr>
+   <tr valign="top">
+     <td width="20%" valign="top">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table border="0" width="100%" cellpadding="1" cellspacing="0">
+ <tr>
+  <td bgcolor="#336666" class="petstore_title" align="center">
+   <font color="#FFFFFF">Pets</font>
+  </td>
+ </tr>
+ <tr>
+  <td bgcolor="#336666">
+   <table border="0" width="100%" cellpadding="5" cellspacing="1">
+    <tr>
+     <td bgcolor="#FFFFFF" class="petstore">
+      
+       <a href="category.screen?category_id=BIRDS">
+        Birds
+       </a>
+       <br>
+      
+       <a href="category.screen?category_id=CATS">
+        Cats
+       </a>
+       <br>
+      
+       <a href="category.screen?category_id=DOGS">
+        Dogs
+       </a>
+       <br>
+      
+       <a href="category.screen?category_id=FISH">
+        Fish
+       </a>
+       <br>
+      
+       <a href="category.screen?category_id=REPTILES">
+        Reptiles
+       </a>
+       <br>
+      
+     </td>
+    </tr>
+   </table>
+  </td>
+ </tr>
+</table>
+
+</td>
+     <td width="60%" valign="top">
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+ 
+  
+  
+ 
+
+
+
+
+
+<p class="petstore_title">Items for this Product</p>
+
+<table border="0"
+       width="100%"
+       cellpadding="1"
+       cellspacing="0">
+<tr>
+<td bgcolor="#808080">
+<table width="100%"
+       cellspacing="0"
+       cellpadding="2" 
+       border="0"
+       bgcolor="#FFFFFF"> 
+
+
+ <tr>
+  <td class="petstore_listing">
+   
+   <a href='/petstore/item.screen?item_id=EST-11'>
+    Venomless
+    Rattlesnake
+   </a>
+   <br>
+   More Bark than bite
+  </td>
+  <td class="petstore_listing" align="right">
+   $18.50
+   <br>
+   
+   <a href='/petstore/cart.do?action=purchase&amp;itemId=EST-11'>
+    Add to Cart
+   </a>
+  </td>
+ </tr>
+
+ <tr>
+  <td class="petstore_listing">
+   
+   <a href='/petstore/item.screen?item_id=EST-12'>
+    Rattleless
+    Rattlesnake
+   </a>
+   <br>
+   Doubles as a watch dog
+  </td>
+  <td class="petstore_listing" align="right">
+   $18.50
+   <br>
+   
+   <a href='/petstore/cart.do?action=purchase&amp;itemId=EST-12'>
+    Add to Cart
+   </a>
+  </td>
+ </tr>
+
+
+</table>
+</td>
+</tr>
+</table>
+
+<div align="right">
+<p class="petstore_listing">
+  
+  
+  
+</p>
+</div>
+
+
+</td>
+     <td valign="top">
+      
+
+
+
+
+
+
+
+
+
+
+     </td>
+   </tr>
+   <tr valign="bottom">
+    <td colspan="3"></td>
+   </tr>
+   <tr>
+    <td colspan="3">
+
+
+
+<table bgcolor="#FFFFFF" cellspacing="0" cellpadding="0" width="100%">
+<tr>
+<td><hr noshade="noshade" size="1"></td>
+</tr>
+<tr>
+<td align="center" class="petstore_footer">The Java Pet Store Demo is
+a fictional sample application from the Java BluePrints for the Enterprise. For more
+information, visit the Java BluePrints for the Enterprise Web site at <a
+href="http://java.sun.com/blueprints/enterprise/"><code>http://java.sun.com/blueprints/enterprise/</code></a>.<br></td>
+</tr>
+<tr>
+<td><hr noshade="noshade" size="1"></td>
+</tr>
+<tr>
+<td align="center" class="petstore_footer">
+<a href="http://java.sun.com/blueprints/enterprise/">Java BluePrints for the Enterprise</a> |
+<a href="http://java.sun.com">Java Software</a> | <a
+href="http://sun.com">Sun Microsystems</a><br>&copy; 2001 Sun
+Microsystems Inc. All rights reserved. Use is subject to license
+terms.</td>
+</tr>
+</table>
+</td>
+   </tr>
+  </table>
+ </body>
+</html>
+

@@ -1,0 +1,9 @@
+<?xml version="1.0" standalone="yes"?>
+<Response>
+<Type>ORDERS</Type>
+<Start>01/01/2002</Start>
+<End>12/31/2003</End>
+<ReqCategory>FISH</ReqCategory>
+<TotalSales>0</TotalSales>
+</Response>
+

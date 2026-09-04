@@ -1,0 +1,27 @@
+{
+  "category": "storefront",
+  "name": "08_auth_user_profile",
+  "description": "Customer account profile view",
+  "request": {
+    "method": "GET",
+    "url": "http://localhost:8000/petstore/userprofile.screen",
+    "path": "/petstore/userprofile.screen",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) PetStore-Migration-Recorder",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "body": null
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "Content-Type": "text/html;charset=8859_1",
+      "Content-Length": "75",
+      "Date": "Fri, 04 Sep 2026 07:06:26 GMT",
+      "Connection": "close",
+      "Server": "Apache TomEE"
+    },
+    "file": "response.html",
+    "content_length": 75
+  }
+}

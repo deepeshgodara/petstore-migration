@@ -1,0 +1,30 @@
+{
+  "category": "admin",
+  "name": "01_login_landing",
+  "description": "Admin login landing page",
+  "request": {
+    "method": "GET",
+    "url": "http://localhost:8000/admin/AdminRequestProcessor",
+    "path": "/admin/AdminRequestProcessor",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) PetStore-Migration-Recorder",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "body": null
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "Cache-Control": "private",
+      "Expires": "Thu, 01 Jan 1970 00:00:00 UTC",
+      "Set-Cookie": "JSESSIONID=0C18090A97F378E1A0E82289AD74455B; Path=/admin; HttpOnly",
+      "Content-Type": "text/html;charset=ISO-8859-1",
+      "Content-Length": "971",
+      "Date": "Fri, 04 Sep 2026 07:06:26 GMT",
+      "Connection": "close",
+      "Server": "Apache TomEE"
+    },
+    "file": "response.html",
+    "content_length": 971
+  }
+}

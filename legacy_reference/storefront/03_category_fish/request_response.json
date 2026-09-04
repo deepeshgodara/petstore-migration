@@ -1,0 +1,27 @@
+{
+  "category": "storefront",
+  "name": "03_category_fish",
+  "description": "Category listing page for FISH",
+  "request": {
+    "method": "GET",
+    "url": "http://localhost:8000/petstore/category.screen?category_id=FISH",
+    "path": "/petstore/category.screen?category_id=FISH",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) PetStore-Migration-Recorder",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "body": null
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "Content-Type": "text/html;charset=UTF-8",
+      "Transfer-Encoding": "chunked",
+      "Date": "Fri, 04 Sep 2026 07:06:26 GMT",
+      "Connection": "close",
+      "Server": "Apache TomEE"
+    },
+    "file": "response.html",
+    "content_length": 10225
+  }
+}

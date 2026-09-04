@@ -1,0 +1,30 @@
+{
+  "category": "supplier",
+  "name": "01_login_landing",
+  "description": "Supplier login form landing page",
+  "request": {
+    "method": "GET",
+    "url": "http://localhost:8000/supplier/RcvrRequestProcessor",
+    "path": "/supplier/RcvrRequestProcessor",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) PetStore-Migration-Recorder",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "body": null
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "Cache-Control": "private",
+      "Expires": "Thu, 01 Jan 1970 00:00:00 UTC",
+      "Set-Cookie": "JSESSIONID=FA55061AB08FDA1D900488361A1AA5A7; Path=/supplier; HttpOnly",
+      "Content-Type": "text/html;charset=ISO-8859-1",
+      "Content-Length": "2607",
+      "Date": "Fri, 04 Sep 2026 07:06:26 GMT",
+      "Connection": "close",
+      "Server": "Apache TomEE"
+    },
+    "file": "response.html",
+    "content_length": 2607
+  }
+}

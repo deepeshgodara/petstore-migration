@@ -1,0 +1,27 @@
+{
+  "category": "storefront",
+  "name": "09_checkout_order_form",
+  "description": "Order information screen with billing and shipping address",
+  "request": {
+    "method": "GET",
+    "url": "http://localhost:8000/petstore/order.screen",
+    "path": "/petstore/order.screen",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) PetStore-Migration-Recorder",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    },
+    "body": null
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "Content-Type": "text/html;charset=8859_1",
+      "Content-Length": "69",
+      "Date": "Fri, 04 Sep 2026 07:06:26 GMT",
+      "Connection": "close",
+      "Server": "Apache TomEE"
+    },
+    "file": "response.html",
+    "content_length": 69
+  }
+}

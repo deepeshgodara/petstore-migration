@@ -1,0 +1,45 @@
+
+
+<html>
+  <head>
+    <title>Java[tm] Pet Store Admin Page</title>
+  </head>
+  <body bgcolor="white">
+    <center>
+      <h1>Java Pet Store Admin Page</h1>
+    </center>
+    <center><hr width="100%"></center>
+    <p>
+    <p>
+    <p>
+    The Java Pet Store Admin Client showcases how the J2EE platform technologies
+    along with the Java WebStart technology can be used to deploy Rich client
+    interface for customers. For more information on Java WebStart please refer
+    to <a href="http://java.sun.com/products/javawebstart/">
+    http://java.sun.com/products/javawebstart/</a>.
+    <br>
+    <br>
+    In this sample application, we showcase how the Java Pet Store 
+    administrator can have the facility of a rich client to get information of
+    sales, revenue, orders with specified state. The administrator can also 
+    approve / deny pending orders.
+    <br>
+    <br>
+    <form action="AdminRequestProcessor" method=post>
+    <p>
+    <p>
+    <p>
+     To launch the JAVA Web Start based Rich Client click here :
+    <input type="hidden" name="currentScreen" value="manageorders">
+    <input type="submit" value="Launch Rich Client">
+    </form>
+    <form action="AdminRequestProcessor" method=post>
+    <p>
+    <p>
+    <p>
+     To logout of Pet Store Admin click here :
+    <input type="hidden" name="currentScreen" value="logout">
+    <input type="submit" value="logout">
+    </form>
+  </body>
+</html>
