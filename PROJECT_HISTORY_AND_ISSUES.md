@@ -580,6 +580,33 @@ Can you please document everything we have done so far and the issues we faced, 
 
 ---
 
+### Prompt 26: Admin Client Orders Display Fix & Architectural Q&A
+
+#### User Prompt:
+```text
+I don't see order details in the admin page when I run the admin client using the script the ui opens but it still have some issues.
+Fix this issue and commit the changes.
+Don't change the source code, assume that this sample application works as intended.
+why are we needing classpath? Do we really need them the application was supposed to be a simple plug and play given we run it in the mentioned environment.
+Why even after with docker we are unable to run the application with the mentioned java version and servers?
+```
+
+#### Problem Analysis & Action Taken:
+- **Action Summary**: Fixed the Admin Client empty order view by unifying data sources to `petstoredb`, configuring OpenEJB MDB activation destinations, and seeding persistent orders in `PUBLIC.MANAGER` and `PUBLIC.PURCHASEORDER`. Clarified why Java Web Start's removal in modern Java mandates `-cp` and why 32-bit x86 architecture constraints prevent running the Sun J2EE RI on ARM64 Apple Silicon.
+- **Root Cause**:
+  1. `petstoredb.script` was initialized with catalog and user data, but contained zero order records.
+  2. `jdbc/opc/OPCDB` in `tomee.xml` pointed to a separate, uninitialized `opcdb` file rather than sharing the persistent database.
+  3. MDBs lacked destination mappings in OpenEJB, isolating `PurchaseOrderMDB` from `jms/opc/OrderQueue`.
+  4. In 2002, Java Web Start (`javaws`) silently extracted JARs and managed classpaths via JNLP XML; Oracle/OpenJDK removed `javaws` in Java 11, necessitating manual `-cp` on modern JDKs.
+  5. The original Sun J2EE 1.3.1 RI and Cloudscape 4.0 are 32-bit x86 binaries that cannot execute on native ARM64 Apple Silicon without unstable emulation.
+- **Technical Implementation**:
+  1. Updated `docker/config/tomee.xml` and `legacy_container/tomee/conf/tomee.xml` to point `OPCDB` and `SupplierDB` to `petstoredb`.
+  2. Added MDB activation destinations in `docker/config/system.properties` and `legacy_container/tomee/conf/system.properties`.
+  3. Seeded `PUBLIC.MANAGER` and `PUBLIC.PURCHASEORDER` in `docker/data/petstoredb.script` with sample pending, approved, and completed orders.
+  4. Verified `GETORDERS` XML responses and validated that `PetStoreAdminClient` renders pending orders in the "Approve Orders" tab and completed/approved orders in the "View Orders" tab.
+
+---
+
 ## Master Troubleshooting & Issues Matrix
 
 | Issue Description | Root Cause | Fix Applied | Result / Verification |
@@ -593,6 +620,7 @@ Can you please document everything we have done so far and the issues we faced, 
 | **Supplier Stock Update Failure** (`Invalid URL: null`) | `OrderFulfillmentFacadeEJB` required JNDI URL `java:comp/env/url/EntityCatalogURL`, which was unmapped. | Bound `url/EntityCatalogURL` in `server.xml` and updated `URLFactory` and `ServiceLocator` to dynamically resolve schema paths. | Submitting inventory updates returns `"Inventory was updated successfully !!!!!"` with HTTP 200 OK. |
 | **Admin Client JNLP Download / Execution** | PetStore Admin is a Java Web Start / Swing desktop application. Modern macOS lacks `javaws`. | Created `./run_admin_client.sh` to extract client JARs, authenticate with the container, and launch the Swing GUI directly. | Authentic 2002 Pet Store Admin Swing window opens on desktop. |
 | **Admin Client NPE** (`getOrders()`) | `openejb.localcopy = false` attempted pass-by-reference reflection across separate EAR classloaders (`petstoreadmin.war` -> `opc.ear`), throwing `IllegalArgumentException`. | Enabled `openejb.localcopy = true` in `system.properties` and moved client interfaces to shared `tomee/lib/`. | Admin client receives valid `<Response><Type>GETORDERS</Type>...</Response>` XML payload and renders order table. |
+| **Admin Client Empty Order Table** | Zero orders in database; `OPCDB` pointed to uninitialized `opcdb`; MDBs lacked OpenEJB destination bindings. | Unified datasources in `tomee.xml` to `petstoredb`; added MDB activation destinations in `system.properties`; seeded `MANAGER` & `PURCHASEORDER` tables in `petstoredb.script`. | `GETORDERS` returns orders; Admin Swing client renders pending and completed orders in GUI table. |
 | **459 Untracked Binary Files in Git** | Extracted container runtime binaries and logs were untracked in Git. | Added `.gitignore` patterns for `legacy_container/`, `runner/bin/`, `*.log`, and database caches; packaged container logic in `docker/`. | Clean repository status with only clean source, Docker scripts, and documentation tracked. |
 
 ---

@@ -53,7 +53,7 @@
 
   <Resource id="jdbc/opc/OPCDB" type="DataSource">
     JdbcDriver = org.hsqldb.jdbcDriver
-    JdbcUrl = jdbc:hsqldb:file:/opt/tomee/data/opcdb;hsqldb.lock_file=false
+    JdbcUrl = jdbc:hsqldb:file:/opt/tomee/data/petstoredb;hsqldb.lock_file=false
     UserName = sa
     Password = 
     JtaManaged = true
@@ -61,7 +61,7 @@
 
   <Resource id="jdbc/supplier/SupplierDB" type="DataSource">
     JdbcDriver = org.hsqldb.jdbcDriver
-    JdbcUrl = jdbc:hsqldb:file:/opt/tomee/data/supplierdb;hsqldb.lock_file=false
+    JdbcUrl = jdbc:hsqldb:file:/opt/tomee/data/petstoredb;hsqldb.lock_file=false
     UserName = sa
     Password = 
     JtaManaged = true
