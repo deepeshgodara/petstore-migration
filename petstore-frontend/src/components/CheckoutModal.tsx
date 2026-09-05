@@ -3,6 +3,7 @@ import { CartLineItem } from '../types/cart';
 import { Locale } from '../types/catalog';
 import { Address, CreateOrderRequest, OrderDocument, Payment } from '../types/order';
 import { orderService } from '../services/orderService';
+import { useAuth } from '../auth';
 import { X, CheckCircle2, CreditCard, Truck, ShieldCheck, Loader2 } from 'lucide-react';
 
 interface CheckoutModalProps {
@@ -20,8 +21,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   locale,
   onOrderSuccess,
 }) => {
-  const [shipping, setShipping] = useState<Address>({
-    name: 'Jane Doe',
+  const { user } = useAuth();
+  const [shipping, setShipping] = useState<Address>(() => ({
+    name: user?.name || 'Jane Doe',
     address1: '100 Market St',
     address2: 'Suite 400',
     city: 'San Francisco',
@@ -29,8 +31,20 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     postalCode: '94105',
     country: 'USA',
     telephone: '415-555-0199',
-    email: 'jane.doe@example.com',
-  });
+    email: user?.email || 'jane.doe@example.com',
+  }));
+
+  const [prevUser, setPrevUser] = useState<typeof user>(user);
+  if (user !== prevUser) {
+    setPrevUser(user);
+    if (user) {
+      setShipping((prev) => ({
+        ...prev,
+        name: user.name,
+        email: user.email,
+      }));
+    }
+  }
 
   const [billingSameAsShipping, setBillingSameAsShipping] = useState<boolean>(true);
   const [billing, setBilling] = useState<Address>({
@@ -93,7 +107,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     }));
 
     const orderPayload: CreateOrderRequest = {
-      userId: 'j2ee',
+      userId: user?.username || 'j2ee',
       locale,
       billing: activeBilling,
       shipping,

@@ -1,17 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Navbar, NavTab } from './components/Navbar';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './auth';
+import { ProtectedRoute } from './auth/ProtectedRoute';
+import { LoginModal } from './components/auth/LoginModal';
+import { StorefrontLayout } from './routes/storefront/StorefrontLayout';
 import { CatalogView } from './components/CatalogView';
+import { AccountPage } from './routes/storefront/AccountPage';
+import { AdminLayout } from './routes/admin/AdminLayout';
+import { AdminOrdersPage } from './routes/admin/AdminOrdersPage';
+import { OpsLayout } from './routes/ops/OpsLayout';
+import { ParityMonitorPage } from './routes/ops/ParityMonitorPage';
 import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
-import { AdminDashboard } from './components/AdminDashboard';
-import { MigrationParityView } from './components/MigrationParityView';
 import { Locale, Product, Item } from './types/catalog';
 import { CartLineItem } from './types/cart';
 import { OrderDocument } from './types/order';
 import './App.css';
 
-export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<NavTab>('storefront');
+export const AppContent: React.FC = () => {
   const [locale, setLocale] = useState<Locale>('en_US');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
@@ -74,36 +80,77 @@ export const App: React.FC = () => {
 
   const handleOrderSuccess = (order: OrderDocument) => {
     console.log('Order successfully placed:', order.id);
-    // Clear cart contents upon order confirmation
     setCartItems([]);
   };
 
   return (
-    <div className="app-container">
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        locale={locale}
-        setLocale={setLocale}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        cartCount={totalCartCount}
-        onOpenCart={() => setIsCartOpen(true)}
-      />
+    <>
+      <Routes>
+        {/* Customer Storefront Routes */}
+        <Route
+          path="/"
+          element={
+            <StorefrontLayout
+              locale={locale}
+              setLocale={setLocale}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              cartCount={totalCartCount}
+              onOpenCart={() => setIsCartOpen(true)}
+            >
+              <CatalogView
+                locale={locale}
+                searchQuery={searchQuery}
+                onAddToCart={handleAddToCart}
+              />
+            </StorefrontLayout>
+          }
+        />
 
-      <main className="main-content">
-        {activeTab === 'storefront' && (
-          <CatalogView
-            locale={locale}
-            searchQuery={searchQuery}
-            onAddToCart={handleAddToCart}
-          />
-        )}
+        {/* Customer Account & Order History Route */}
+        <Route
+          path="/account"
+          element={
+            <StorefrontLayout
+              locale={locale}
+              setLocale={setLocale}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              cartCount={totalCartCount}
+              onOpenCart={() => setIsCartOpen(true)}
+            >
+              <AccountPage />
+            </StorefrontLayout>
+          }
+        />
 
-        {activeTab === 'admin' && <AdminDashboard />}
+        {/* Restricted Operations / Admin Portal Route Package */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute requiredRole="ROLE_ADMIN" portalTitle="Store Operations Admin">
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminOrdersPage />} />
+        </Route>
 
-        {activeTab === 'migration' && <MigrationParityView />}
-      </main>
+        {/* Restricted DevOps / Engineering Telemetry Console Route Package */}
+        <Route
+          path="/ops"
+          element={
+            <ProtectedRoute requiredRole="ROLE_ENGINEER" portalTitle="SRE & Migration Telemetry">
+              <OpsLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<ParityMonitorPage />} />
+        </Route>
+
+        {/* Catch-all Redirect */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
 
       {/* Slide-over Shopping Cart Drawer */}
       <CartDrawer
@@ -125,7 +172,20 @@ export const App: React.FC = () => {
         locale={locale}
         onOrderSuccess={handleOrderSuccess}
       />
-    </div>
+
+      {/* Global Authentication Modal */}
+      <LoginModal />
+    </>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </AuthProvider>
   );
 };
 
