@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 /**
  * Entry point for Pet Store Modern Migration & Shadow Reconciliation Microservice.
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.petstore.migration", "com.petstore.common"})
 public class MigrationApplication {
 
   public static void main(String[] args) {
