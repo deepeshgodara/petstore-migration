@@ -1,8 +1,9 @@
 package com.petstore.migration.config;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -32,12 +33,14 @@ public class LegacyDatabaseConfig {
    */
   @Bean(name = "legacyDataSource")
   public DataSource legacyDataSource() {
-    return DataSourceBuilder.create()
-        .url(url)
-        .username(username)
-        .password(password)
-        .driverClassName(driverClassName)
-        .build();
+    HikariConfig config = new HikariConfig();
+    config.setJdbcUrl(url);
+    config.setUsername(username);
+    config.setPassword(password);
+    config.setDriverClassName(driverClassName);
+    config.setReadOnly(true);
+    config.setPoolName("LegacyHSQLDBPool");
+    return new HikariDataSource(config);
   }
 
   /**

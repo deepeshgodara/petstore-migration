@@ -546,7 +546,7 @@ This granular checklist tracks the implementation of the preferred **Dual-Write 
 - [x] **Task 3.2**: Implement catalog transformation processor mapping multi-row relational locale records into single MongoDB product documents.
 - [x] **Task 3.3**: Build order history reader targeting legacy `PUBLIC.PURCHASEORDER` and `PUBLIC.MANAGER` tables.
 - [x] **Task 3.4**: Execute idempotent `bulkWrite` upserts into MongoDB with execution time and record count metrics.
-- [ ] **Task 3.5**: Verify initial baseline load achieves 100% record parity against container database.
+- [x] **Task 3.5**: Verify initial baseline load achieves 100% record parity against container database.
 
 ### Phase 4: Dual-Write & Shadow Reconciliation Engine
 - [ ] **Task 4.1**: Implement `DualWritePublisher` triggered by order creation and status update operations.
