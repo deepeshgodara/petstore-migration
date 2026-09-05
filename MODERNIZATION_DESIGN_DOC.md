@@ -530,7 +530,7 @@ This granular checklist tracks the implementation of the preferred **Dual-Write 
 
 ### Phase 1: Environment Scaffolding & Infrastructure
 - [x] **Task 1.1**: Initialize multi-module Maven project hierarchy (`petstore-modern/`) with Java 21 LTS and Spring Boot 3.3.x parent POM.
-- [ ] **Task 1.2**: Author `docker-compose.yml` defining MongoDB 7.0 replica set, Apache Kafka + KRaft broker, and bridging to the existing `petstore-baseline` container network.
+- [x] **Task 1.2**: Author `docker-compose.yml` defining MongoDB 7.0 replica set, Apache Kafka + KRaft broker, and bridging to the existing `petstore-baseline` container network.
 - [ ] **Task 1.3**: Configure application properties and environment profiles (`dev`, `test`, `prod`) with MongoDB connection URIs and Kafka bootstrap servers.
 - [ ] **Task 1.4**: Establish OpenTelemetry and Micrometer metrics scaffolding for migration tracking.
 
