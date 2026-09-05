@@ -1,16 +1,25 @@
 package com.petstore.order.service;
 
+import com.petstore.order.document.LineItemDocument;
 import com.petstore.order.document.OrderDocument;
 import com.petstore.order.document.OrderStatus;
+import com.petstore.order.document.PaymentDocument;
+import com.petstore.order.dto.CreateOrderRequest;
+import com.petstore.order.dto.OrderSummaryResponse;
 import com.petstore.order.kafka.DualWritePublisher;
 import com.petstore.order.repository.OrderRepository;
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 /**
@@ -30,6 +39,73 @@ public class OrderService {
       DualWritePublisher dualWritePublisher) {
     this.orderRepository = orderRepository;
     this.dualWritePublisher = dualWritePublisher;
+  }
+
+  /**
+   * Places a customer order from a CreateOrderRequest, calculates line item costs,
+   * masks payment details, persists to MongoDB, and triggers dual-write publishing.
+   *
+   * @param request checkout request payload
+   * @return the newly placed OrderDocument
+   */
+  public OrderDocument placeOrder(CreateOrderRequest request) {
+    if (request == null) {
+      throw new IllegalArgumentException("CreateOrderRequest cannot be null");
+    }
+    if (request.userId() == null || request.userId().isBlank()) {
+      throw new IllegalArgumentException("Customer userId is required to place an order");
+    }
+
+    String orderId = String.valueOf(System.currentTimeMillis());
+    Instant now = Instant.now();
+
+    BigDecimal totalPrice = BigDecimal.ZERO;
+    List<LineItemDocument> lineItems = new ArrayList<>();
+    if (request.lineItems() != null) {
+      int lineNum = 1;
+      for (LineItemDocument item : request.lineItems()) {
+        BigDecimal unitPrice = item.getUnitPrice() != null ? item.getUnitPrice() : BigDecimal.ZERO;
+        int qty = item.getQuantity() > 0 ? item.getQuantity() : 1;
+        BigDecimal itemCost = unitPrice.multiply(BigDecimal.valueOf(qty));
+        totalPrice = totalPrice.add(itemCost);
+
+        LineItemDocument lineItem = new LineItemDocument(
+            lineNum++,
+            item.getItemId(),
+            item.getProductId(),
+            item.getCategoryId(),
+            qty,
+            unitPrice,
+            itemCost
+        );
+        lineItems.add(lineItem);
+      }
+    }
+
+    PaymentDocument payment = request.payment();
+    if (payment != null
+        && (payment.getCardNumberMasked() == null || payment.getCardNumberMasked().isBlank())) {
+      payment.setCardNumberMasked("XXXX-XXXX-XXXX-0000");
+    }
+
+    String locale = (request.locale() != null && !request.locale().isBlank())
+        ? request.locale()
+        : "en_US";
+
+    OrderDocument order = new OrderDocument(
+        orderId,
+        request.userId(),
+        now,
+        OrderStatus.PENDING,
+        totalPrice,
+        locale,
+        request.billing(),
+        request.shipping(),
+        payment,
+        lineItems
+    );
+
+    return createOrder(order);
   }
 
   /**
@@ -59,7 +135,8 @@ public class OrderService {
     order.setUpdatedAt(Instant.now());
 
     OrderDocument savedOrder = orderRepository.save(order);
-    log.info("Successfully persisted order [{}] with status [{}]", savedOrder.getId(), savedOrder.getStatus());
+    log.info("Successfully persisted order [{}] with status [{}]",
+        savedOrder.getId(), savedOrder.getStatus());
 
     // Trigger dual-write asynchronously
     dualWritePublisher.publishOrderCreated(savedOrder);
@@ -110,6 +187,23 @@ public class OrderService {
   }
 
   /**
+   * Retrieves orders optionally filtered by user ID or lifecycle status.
+   *
+   * @param userId optional customer ID
+   * @param status optional order status
+   * @return list of matching orders
+   */
+  public List<OrderDocument> getOrders(String userId, OrderStatus status) {
+    if (userId != null && !userId.isBlank()) {
+      return getOrdersByUserId(userId.trim());
+    } else if (status != null) {
+      return getOrdersByStatus(status);
+    } else {
+      return orderRepository.findAll(Sort.by(Sort.Direction.DESC, "orderDate"));
+    }
+  }
+
+  /**
    * Retrieves all orders for a customer ordered by order date descending.
    *
    * @param userId customer identifier
@@ -127,5 +221,33 @@ public class OrderService {
    */
   public List<OrderDocument> getOrdersByStatus(OrderStatus status) {
     return orderRepository.findByStatusOrderByOrderDateDesc(status);
+  }
+
+  /**
+   * Aggregates total orders, total revenue, and status breakdown for administrator overview.
+   *
+   * @return OrderSummaryResponse
+   */
+  public OrderSummaryResponse getOrderSummary() {
+    long totalOrders = orderRepository.count();
+    List<OrderRepository.RevenueSummary> revenueList = orderRepository.calculateRevenueSummary();
+    BigDecimal totalRevenue = BigDecimal.ZERO;
+    if (revenueList != null && !revenueList.isEmpty()
+        && revenueList.get(0).getTotalRevenue() != null) {
+      totalRevenue = revenueList.get(0).getTotalRevenue();
+    }
+
+    List<OrderRepository.OrderStatusSummary> breakdownList =
+        orderRepository.getOrderStatusBreakdown();
+    Map<String, Long> statusMap = new HashMap<>();
+    if (breakdownList != null) {
+      for (OrderRepository.OrderStatusSummary s : breakdownList) {
+        if (s.getStatus() != null) {
+          statusMap.put(s.getStatus(), s.getCount());
+        }
+      }
+    }
+
+    return new OrderSummaryResponse(totalOrders, totalRevenue, statusMap);
   }
 }

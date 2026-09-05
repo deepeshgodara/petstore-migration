@@ -41,13 +41,14 @@ public interface OrderRepository extends MongoRepository<OrderDocument, String> 
   /**
    * Aggregation pipeline to compute total revenue for approved/completed orders.
    *
-   * @return revenue summary projection
+   * @return list containing revenue summary projection if orders exist
    */
   @Aggregation(pipeline = {
       "{ '$match': { 'status': { '$in': ['APPROVED', 'COMPLETED'] } } }",
-      "{ '$group': { '_id': null, 'totalRevenue': { '$sum': '$totalPrice' }, 'orderCount': { '$sum': 1 } } }"
+      "{ '$group': { '_id': null, 'totalRevenue': { '$sum': { '$toDecimal': '$totalPrice' } },"
+          + " 'orderCount': { '$sum': 1 } } }"
   })
-  RevenueSummary calculateRevenueSummary();
+  List<RevenueSummary> calculateRevenueSummary();
 
   /**
    * Aggregation pipeline to group order counts by status.
@@ -55,25 +56,81 @@ public interface OrderRepository extends MongoRepository<OrderDocument, String> 
    * @return list of status breakdown projections
    */
   @Aggregation(pipeline = {
-      "{ '$group': { '_id': '$status', 'count': { '$sum': 1 }, 'totalAmount': { '$sum': '$totalPrice' } } }",
+      "{ '$group': { '_id': '$status', 'count': { '$sum': 1 },"
+          + " 'totalAmount': { '$sum': { '$toDecimal': '$totalPrice' } } } }",
       "{ '$project': { 'status': '$_id', 'count': 1, 'totalAmount': 1, '_id': 0 } }"
   })
   List<OrderStatusSummary> getOrderStatusBreakdown();
 
   /**
-   * Projection interface for revenue calculation.
+   * Projection class for revenue calculation.
    */
-  interface RevenueSummary {
-    BigDecimal getTotalRevenue();
-    long getOrderCount();
+  class RevenueSummary {
+    private BigDecimal totalRevenue;
+    private long orderCount;
+
+    public RevenueSummary() {}
+
+    public RevenueSummary(BigDecimal totalRevenue, long orderCount) {
+      this.totalRevenue = totalRevenue;
+      this.orderCount = orderCount;
+    }
+
+    public BigDecimal getTotalRevenue() {
+      return totalRevenue;
+    }
+
+    public void setTotalRevenue(BigDecimal totalRevenue) {
+      this.totalRevenue = totalRevenue;
+    }
+
+    public long getOrderCount() {
+      return orderCount;
+    }
+
+    public void setOrderCount(long orderCount) {
+      this.orderCount = orderCount;
+    }
   }
 
   /**
-   * Projection interface for order status breakdown.
+   * Projection class for order status breakdown.
    */
-  interface OrderStatusSummary {
-    String getStatus();
-    long getCount();
-    BigDecimal getTotalAmount();
+  class OrderStatusSummary {
+    private String status;
+    private long count;
+    private BigDecimal totalAmount;
+
+    public OrderStatusSummary() {}
+
+    public OrderStatusSummary(String status, long count, BigDecimal totalAmount) {
+      this.status = status;
+      this.count = count;
+      this.totalAmount = totalAmount;
+    }
+
+    public String getStatus() {
+      return status;
+    }
+
+    public void setStatus(String status) {
+      this.status = status;
+    }
+
+    public long getCount() {
+      return count;
+    }
+
+    public void setCount(long count) {
+      this.count = count;
+    }
+
+    public BigDecimal getTotalAmount() {
+      return totalAmount;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+      this.totalAmount = totalAmount;
+    }
   }
 }
