@@ -26,3 +26,4 @@ derby.log
 *.log
 tmp/
 temp/
+node_modules/

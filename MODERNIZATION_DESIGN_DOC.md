@@ -562,7 +562,7 @@ This granular checklist tracks the implementation of the preferred **Dual-Write 
 - [x] **Task 5.4**: Implement automated integration tests using `Testcontainers` (MongoDB + Kafka).
 
 ### Phase 6: Modern React 18 Single-Page Application
-- [ ] **Task 6.1**: Scaffold React 18 + Vite + TypeScript application in `petstore-frontend/`.
+- [x] **Task 6.1**: Scaffold React 18 + Vite + TypeScript application in `petstore-frontend/`.
 - [ ] **Task 6.2**: Implement responsive storefront catalog browsing with live multi-lingual switching (EN, JA, ZH).
 - [ ] **Task 6.3**: Implement client-side shopping cart with instant quantity adjustments and checkout modal.
 - [ ] **Task 6.4**: Build modern Admin Dashboard replacing legacy Swing client, with real-time pending order approval and sales charts.
