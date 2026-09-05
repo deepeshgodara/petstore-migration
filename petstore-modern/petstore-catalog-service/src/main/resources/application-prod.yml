@@ -1,0 +1,12 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://mongo:27017/petstore?replicaSet=rs0}
+
+logging:
+  level:
+    root: WARN
+    com.petstore: INFO

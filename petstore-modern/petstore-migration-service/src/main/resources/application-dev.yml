@@ -1,0 +1,9 @@
+spring:
+  config:
+    activate:
+      on-profile: dev
+  data:
+    mongodb:
+      uri: ${MONGO_URI:mongodb://localhost:27017/petstore?replicaSet=rs0}
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}

@@ -1,0 +1,60 @@
+server:
+  port: 8085
+  shutdown: graceful
+
+spring:
+  application:
+    name: petstore-migration-service
+  threads:
+    virtual:
+      enabled: true
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/petstore?replicaSet=rs0
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: petstore-migration-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.petstore.*"
+
+legacy:
+  datasource:
+    url: jdbc:hsqldb:file:${LEGACY_DB_DIR:/Users/deepeshgodara/Documents/petstore1.3.1_02/docker/data}/petstoredb;readonly=true;shutdown=false
+    username: sa
+    password: ""
+    driver-class-name: org.hsqldb.jdbc.JDBCDriver
+
+migration:
+  dualwrite:
+    enabled: true
+    topic: petstore.orders.dualwrite
+    dlq-topic: petstore.orders.dlq
+  shadow-reconciliation:
+    enabled: true
+    sample-rate: 1.0
+    drift-tolerance-cents: 1
+    cron: "0 */10 * * * *"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  level:
+    root: INFO
+    com.petstore.migration: DEBUG

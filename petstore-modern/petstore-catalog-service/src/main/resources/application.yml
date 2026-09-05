@@ -1,0 +1,30 @@
+server:
+  port: 8081
+  shutdown: graceful
+
+spring:
+  application:
+    name: petstore-catalog-service
+  threads:
+    virtual:
+      enabled: true
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/petstore?replicaSet=rs0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  level:
+    root: INFO
+    com.petstore.catalog: DEBUG
