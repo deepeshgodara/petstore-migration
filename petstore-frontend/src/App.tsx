@@ -1,122 +1,102 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import React, { useState, useEffect } from 'react';
+import { Navbar, NavTab } from './components/Navbar';
+import { CatalogView } from './components/CatalogView';
+import { Locale, Product, Item } from './types/catalog';
+import { CartLineItem } from './types/cart';
+import { Layers, Activity } from 'lucide-react';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+export const App: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<NavTab>('storefront');
+  const [locale, setLocale] = useState<Locale>('en_US');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [cartItems, setCartItems] = useState<CartLineItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('petstore_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Persist cart to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('petstore_cart', JSON.stringify(cartItems));
+    } catch (e) {
+      console.error('Failed to save cart to localStorage', e);
+    }
+  }, [cartItems]);
+
+  const totalCartCount = cartItems.reduce((acc, curr) => acc + curr.quantity, 0);
+
+  const handleAddToCart = (product: Product, item: Item, quantity: number = 1) => {
+    setCartItems((prev) => {
+      const lineId = `${product.id}_${item.itemId}`;
+      const existingIdx = prev.findIndex((ci) => ci.id === lineId);
+      if (existingIdx >= 0) {
+        const updated = [...prev];
+        updated[existingIdx] = {
+          ...updated[existingIdx],
+          quantity: updated[existingIdx].quantity + quantity,
+        };
+        return updated;
+      }
+      return [...prev, { id: lineId, product, item, quantity }];
+    });
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app-container">
+      <Navbar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        locale={locale}
+        setLocale={setLocale}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        cartCount={totalCartCount}
+        onOpenCart={() => {
+          // Open cart modal (implemented in Task 6.3)
+          console.log('Open Cart triggered');
+        }}
+      />
 
-      <div className="ticks"></div>
+      <main className="main-content">
+        {activeTab === 'storefront' && (
+          <CatalogView
+            locale={locale}
+            searchQuery={searchQuery}
+            onAddToCart={handleAddToCart}
+          />
+        )}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        {activeTab === 'admin' && (
+          <div className="empty-state">
+            <Layers size={48} className="empty-state-icon" />
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+              Pet Store Modern Admin Dashboard
+            </h2>
+            <p style={{ maxWidth: '500px', margin: '0 auto', fontSize: '0.95rem' }}>
+              Pending orders list, approval workflows, and revenue summary metrics are scheduled for implementation in Task 6.4.
+            </p>
+          </div>
+        )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
-}
+        {activeTab === 'migration' && (
+          <div className="empty-state">
+            <Activity size={48} className="empty-state-icon" />
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+              Visual Migration Parity Monitor
+            </h2>
+            <p style={{ maxWidth: '500px', margin: '0 auto', fontSize: '0.95rem' }}>
+              Real-time reconciliation stats, audit drift tracking, and cutover readiness indicators are scheduled for implementation in Task 6.5.
+            </p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
 
-export default App
+export default App;
