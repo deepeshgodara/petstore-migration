@@ -11,6 +11,7 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/petstore?replicaSet=rs0
+      auto-index-creation: true
   kafka:
     bootstrap-servers: localhost:9092
     producer:
