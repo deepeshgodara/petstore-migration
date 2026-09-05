@@ -24,7 +24,7 @@ public class ProductDocument implements Serializable {
   @Id
   private String id;
 
-  @Indexed
+  @Indexed(name = "categoryId_idx")
   private String categoryId;
 
   private Map<String, String> names = new HashMap<>();

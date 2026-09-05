@@ -556,7 +556,7 @@ This granular checklist tracks the implementation of the preferred **Dual-Write 
 - [x] **Task 4.5**: Expose `/api/v1/migration/parity` dashboard endpoint reporting real-time reconciliation metrics.
 
 ### Phase 5: Modern Reactive REST APIs & Event Streaming
-- [ ] **Task 5.1**: Implement `CatalogController` supporting `/api/v1/categories`, `/api/v1/products`, `/api/v1/items` with locale parameter resolution.
+- [x] **Task 5.1**: Implement `CatalogController` supporting `/api/v1/categories`, `/api/v1/products`, `/api/v1/items` with locale parameter resolution.
 - [ ] **Task 5.2**: Implement `OrderController` supporting customer order placement, order lookup, and admin status updates (`PENDING`, `APPROVED`, `COMPLETED`).
 - [ ] **Task 5.3**: Implement Kafka `OrderEventProducer` publishing domain events upon successful state transitions.
 - [ ] **Task 5.4**: Implement automated integration tests using `Testcontainers` (MongoDB + Kafka).
