@@ -566,7 +566,7 @@ This granular checklist tracks the implementation of the preferred **Dual-Write 
 - [x] **Task 6.2**: Implement responsive storefront catalog browsing with live multi-lingual switching (EN, JA, ZH).
 - [x] **Task 6.3**: Implement client-side shopping cart with instant quantity adjustments and checkout modal.
 - [x] **Task 6.4**: Build modern Admin Dashboard replacing legacy Swing client, with real-time pending order approval and sales charts.
-- [ ] **Task 6.5**: Build visual Migration Parity Monitor tab displaying live dual-write sync status and reconciliation metrics.
+- [x] **Task 6.5**: Build visual Migration Parity Monitor tab displaying live dual-write sync status and reconciliation metrics.
 
 ### Phase 7: Verification & Playback Interview Demonstration
 - [ ] **Task 7.1**: Perform end-to-end checkout flow in modern UI, verifying write propagation to MongoDB and legacy DB.

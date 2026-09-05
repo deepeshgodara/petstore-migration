@@ -4,10 +4,10 @@ import { CatalogView } from './components/CatalogView';
 import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
 import { AdminDashboard } from './components/AdminDashboard';
+import { MigrationParityView } from './components/MigrationParityView';
 import { Locale, Product, Item } from './types/catalog';
 import { CartLineItem } from './types/cart';
 import { OrderDocument } from './types/order';
-import { Activity } from 'lucide-react';
 import './App.css';
 
 export const App: React.FC = () => {
@@ -102,17 +102,7 @@ export const App: React.FC = () => {
 
         {activeTab === 'admin' && <AdminDashboard />}
 
-        {activeTab === 'migration' && (
-          <div className="empty-state">
-            <Activity size={48} className="empty-state-icon" />
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
-              Visual Migration Parity Monitor
-            </h2>
-            <p style={{ maxWidth: '500px', margin: '0 auto', fontSize: '0.95rem' }}>
-              Real-time reconciliation stats, audit drift tracking, and cutover readiness indicators are scheduled for implementation in Task 6.5.
-            </p>
-          </div>
-        )}
+        {activeTab === 'migration' && <MigrationParityView />}
       </main>
 
       {/* Slide-over Shopping Cart Drawer */}
