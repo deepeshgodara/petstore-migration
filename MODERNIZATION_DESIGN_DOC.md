@@ -539,6 +539,7 @@ This granular checklist tracks the implementation of the preferred **Dual-Write 
 - [x] **Task 2.2**: Implement `OrderDocument`, `LineItemDocument`, and `AddressDocument` in `petstore-order-service`.
 - [x] **Task 2.3**: Author MongoDB compound indexes: `petstore_orders.userId_orderDate`, `petstore_orders.status`, `petstore_products.categoryId`.
 - [x] **Task 2.4**: Implement Spring Data MongoDB repositories with custom aggregation pipelines.
+- [x] **Task 2.5**: Implement unit tests for domain documents, value objects, and migration parity metrics.
 
 ### Phase 3: Live Historical Baseline Extraction (Migration Worker)
 - [ ] **Task 3.1**: Build Spring Batch JDBC cursor reader targeting live legacy `petstoredb` (`CATEGORY`, `PRODUCT`, `ITEM`, `ITEM_DETAILS`).
