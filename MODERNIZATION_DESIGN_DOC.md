@@ -572,5 +572,5 @@ This granular checklist tracks the implementation of the preferred **Dual-Write 
 ### Phase 7: Verification & Playback Interview Demonstration
 - [x] **Task 7.1**: Perform end-to-end checkout flow in modern UI, verifying write propagation to MongoDB and legacy DB.
 - [x] **Task 7.2**: Demonstrate automated Admin Client approval flow in modern web dashboard.
-- [ ] **Task 7.3**: Execute chaos experiment: simulate secondary Mongo failure and verify legacy application continues uninterrupted with DLQ recovery.
+- [x] **Task 7.3**: Execute chaos experiment: simulate secondary Mongo failure and verify legacy application continues uninterrupted with DLQ recovery.
 - [ ] **Task 7.4**: Author comprehensive `README.md` with step-by-step developer build/run instructions for the presentation playback.
