@@ -535,7 +535,7 @@ This granular checklist tracks the implementation of the preferred **Dual-Write 
 - [x] **Task 1.4**: Establish OpenTelemetry and Micrometer metrics scaffolding for migration tracking.
 
 ### Phase 2: Domain Modeling & Document Repositories
-- [ ] **Task 2.1**: Implement `ProductDocument` and `CategoryDocument` in `petstore-catalog-service` with multi-language embedded maps.
+- [x] **Task 2.1**: Implement `ProductDocument` and `CategoryDocument` in `petstore-catalog-service` with multi-language embedded maps.
 - [ ] **Task 2.2**: Implement `OrderDocument`, `LineItemDocument`, and `AddressDocument` in `petstore-order-service`.
 - [ ] **Task 2.3**: Author MongoDB compound indexes: `petstore_orders.userId_orderDate`, `petstore_orders.status`, `petstore_products.categoryId`.
 - [ ] **Task 2.4**: Implement Spring Data MongoDB repositories with custom aggregation pipelines.
