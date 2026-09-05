@@ -7,6 +7,7 @@ import com.petstore.order.document.PaymentDocument;
 import com.petstore.order.dto.CreateOrderRequest;
 import com.petstore.order.dto.OrderSummaryResponse;
 import com.petstore.order.kafka.DualWritePublisher;
+import com.petstore.order.kafka.OrderEventProducer;
 import com.petstore.order.repository.OrderRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -24,7 +25,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * Service managing order lifecycle operations and orchestrating asynchronous
- * dual-write event dispatching via {@link DualWritePublisher}.
+ * dual-write event dispatching and business domain event streaming.
  */
 @Service
 public class OrderService {
@@ -33,12 +34,15 @@ public class OrderService {
 
   private final OrderRepository orderRepository;
   private final DualWritePublisher dualWritePublisher;
+  private final OrderEventProducer orderEventProducer;
 
   public OrderService(
       OrderRepository orderRepository,
-      DualWritePublisher dualWritePublisher) {
+      DualWritePublisher dualWritePublisher,
+      OrderEventProducer orderEventProducer) {
     this.orderRepository = orderRepository;
     this.dualWritePublisher = dualWritePublisher;
+    this.orderEventProducer = orderEventProducer;
   }
 
   /**
@@ -141,11 +145,15 @@ public class OrderService {
     // Trigger dual-write asynchronously
     dualWritePublisher.publishOrderCreated(savedOrder);
 
+    // Publish domain event asynchronously
+    orderEventProducer.publishOrderCreated(savedOrder);
+
     return savedOrder;
   }
 
   /**
-   * Updates an order's lifecycle status and triggers an asynchronous dual-write event to Kafka.
+   * Updates an order's lifecycle status, triggers an asynchronous dual-write event to Kafka,
+   * and publishes domain state transition events.
    *
    * @param orderId the order identifier
    * @param newStatus the target order status
@@ -172,6 +180,9 @@ public class OrderService {
 
     // Trigger dual-write asynchronously
     dualWritePublisher.publishOrderStatusUpdated(updatedOrder, previousStatus, newStatus);
+
+    // Publish domain event asynchronously
+    orderEventProducer.publishOrderStatusUpdated(updatedOrder, previousStatus, newStatus);
 
     return updatedOrder;
   }

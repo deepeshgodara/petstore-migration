@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.petstore.order.document.OrderDocument;
 import com.petstore.order.document.OrderStatus;
 import com.petstore.order.kafka.DualWritePublisher;
+import com.petstore.order.kafka.OrderEventProducer;
 import com.petstore.order.repository.OrderRepository;
 import java.math.BigDecimal;
 import java.util.List;
@@ -27,23 +28,26 @@ class OrderServiceTest {
 
   private OrderRepository orderRepository;
   private DualWritePublisher dualWritePublisher;
+  private OrderEventProducer orderEventProducer;
   private OrderService orderService;
 
   @BeforeEach
   void setUp() {
     orderRepository = mock(OrderRepository.class);
     dualWritePublisher = mock(DualWritePublisher.class);
-    orderService = new OrderService(orderRepository, dualWritePublisher);
+    orderEventProducer = mock(OrderEventProducer.class);
+    orderService = new OrderService(orderRepository, dualWritePublisher, orderEventProducer);
   }
 
   @Test
-  @DisplayName("Should create order, save to repository, and trigger dual-write publisher")
+  @DisplayName("Should create order, persist, and trigger dual-write and domain events")
   void shouldCreateOrderAndTriggerDualWrite() {
     OrderDocument inputOrder = new OrderDocument();
     inputOrder.setUserId("shopper");
     inputOrder.setTotalPrice(BigDecimal.valueOf(120.00));
 
-    when(orderRepository.save(any(OrderDocument.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(orderRepository.save(any(OrderDocument.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     OrderDocument created = orderService.createOrder(inputOrder);
 
@@ -53,22 +57,28 @@ class OrderServiceTest {
 
     verify(orderRepository).save(created);
     verify(dualWritePublisher).publishOrderCreated(created);
+    verify(orderEventProducer).publishOrderCreated(created);
   }
 
   @Test
-  @DisplayName("Should update order status, save to repository, and trigger dual-write publisher")
+  @DisplayName("Should update status, persist, and trigger dual-write and domain events")
   void shouldUpdateOrderStatusAndTriggerDualWrite() {
     OrderDocument existingOrder = new OrderDocument(
-        "ORD-555", "shopper", null, OrderStatus.PENDING, BigDecimal.valueOf(80), "en_US", null, null, null, null);
+        "ORD-555", "shopper", null, OrderStatus.PENDING,
+        BigDecimal.valueOf(80), "en_US", null, null, null, null);
 
     when(orderRepository.findById("ORD-555")).thenReturn(Optional.of(existingOrder));
-    when(orderRepository.save(any(OrderDocument.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    when(orderRepository.save(any(OrderDocument.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
 
     OrderDocument updated = orderService.updateOrderStatus("ORD-555", OrderStatus.APPROVED);
 
     assertThat(updated.getStatus()).isEqualTo(OrderStatus.APPROVED);
     verify(orderRepository).save(existingOrder);
-    verify(dualWritePublisher).publishOrderStatusUpdated(existingOrder, OrderStatus.PENDING, OrderStatus.APPROVED);
+    verify(dualWritePublisher).publishOrderStatusUpdated(
+        existingOrder, OrderStatus.PENDING, OrderStatus.APPROVED);
+    verify(orderEventProducer).publishOrderStatusUpdated(
+        existingOrder, OrderStatus.PENDING, OrderStatus.APPROVED);
   }
 
   @Test
