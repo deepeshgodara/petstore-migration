@@ -553,7 +553,7 @@ This granular checklist tracks the implementation of the preferred **Dual-Write 
 - [x] **Task 4.2**: Configure Kafka topic `orders.dualwrite` with Dead-Letter Queue (DLQ) error isolation.
 - [x] **Task 4.3**: Implement `ShadowReadComparator` comparing live relational query responses against MongoDB document reads.
 - [x] **Task 4.4**: Implement automated discrepancy logger with alert thresholds for price, quantity, or status drift.
-- [ ] **Task 4.5**: Expose `/api/v1/migration/parity` dashboard endpoint reporting real-time reconciliation metrics.
+- [x] **Task 4.5**: Expose `/api/v1/migration/parity` dashboard endpoint reporting real-time reconciliation metrics.
 
 ### Phase 5: Modern Reactive REST APIs & Event Streaming
 - [ ] **Task 5.1**: Implement `CatalogController` supporting `/api/v1/categories`, `/api/v1/products`, `/api/v1/items` with locale parameter resolution.
