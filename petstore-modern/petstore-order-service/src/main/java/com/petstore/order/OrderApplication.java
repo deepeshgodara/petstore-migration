@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 /**
  * Entry point for Pet Store Modern Order Microservice.
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.petstore.order", "com.petstore.common"})
 public class OrderApplication {
 
   public static void main(String[] args) {

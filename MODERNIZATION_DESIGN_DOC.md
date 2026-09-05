@@ -549,7 +549,7 @@ This granular checklist tracks the implementation of the preferred **Dual-Write 
 - [x] **Task 3.5**: Verify initial baseline load achieves 100% record parity against container database.
 
 ### Phase 4: Dual-Write & Shadow Reconciliation Engine
-- [ ] **Task 4.1**: Implement `DualWritePublisher` triggered by order creation and status update operations.
+- [x] **Task 4.1**: Implement `DualWritePublisher` triggered by order creation and status update operations.
 - [ ] **Task 4.2**: Configure Kafka topic `orders.dualwrite` with Dead-Letter Queue (DLQ) error isolation.
 - [ ] **Task 4.3**: Implement `ShadowReadComparator` comparing live relational query responses against MongoDB document reads.
 - [ ] **Task 4.4**: Implement automated discrepancy logger with alert thresholds for price, quantity, or status drift.
