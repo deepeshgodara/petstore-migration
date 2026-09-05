@@ -12,11 +12,11 @@ import java.util.NoSuchElementException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -78,13 +78,15 @@ public class OrderController {
 
   /**
    * Updates an order's lifecycle status (e.g., administrator approving
-   * or completing a pending order).
+   * or completing a pending order). Supports both PATCH and PUT methods.
    *
    * @param orderId order identifier
    * @param request status update request
    * @return updated OrderDocument or 404 Not Found
    */
-  @PatchMapping("/{orderId}/status")
+  @RequestMapping(
+      value = "/{orderId}/status",
+      method = {RequestMethod.PATCH, RequestMethod.PUT})
   public ResponseEntity<OrderDocument> updateOrderStatus(
       @PathVariable String orderId,
       @RequestBody UpdateOrderStatusRequest request) {

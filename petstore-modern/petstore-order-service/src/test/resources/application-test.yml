@@ -1,0 +1,16 @@
+spring:
+  data:
+    mongodb:
+      auto-index-creation: false
+  kafka:
+    consumer:
+      auto-offset-reset: earliest
+
+app:
+  kafka:
+    topics:
+      order-created: petstore.orders.created
+      order-approved: petstore.orders.approved
+      order-completed: petstore.orders.completed
+      order-dualwrite: petstore.orders.dualwrite
+      order-dlq: petstore.orders.dlq
