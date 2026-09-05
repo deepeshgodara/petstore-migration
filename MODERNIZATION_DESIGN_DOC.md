@@ -565,7 +565,7 @@ This granular checklist tracks the implementation of the preferred **Dual-Write 
 - [x] **Task 6.1**: Scaffold React 18 + Vite + TypeScript application in `petstore-frontend/`.
 - [x] **Task 6.2**: Implement responsive storefront catalog browsing with live multi-lingual switching (EN, JA, ZH).
 - [x] **Task 6.3**: Implement client-side shopping cart with instant quantity adjustments and checkout modal.
-- [ ] **Task 6.4**: Build modern Admin Dashboard replacing legacy Swing client, with real-time pending order approval and sales charts.
+- [x] **Task 6.4**: Build modern Admin Dashboard replacing legacy Swing client, with real-time pending order approval and sales charts.
 - [ ] **Task 6.5**: Build visual Migration Parity Monitor tab displaying live dual-write sync status and reconciliation metrics.
 
 ### Phase 7: Verification & Playback Interview Demonstration

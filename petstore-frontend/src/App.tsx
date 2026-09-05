@@ -3,10 +3,11 @@ import { Navbar, NavTab } from './components/Navbar';
 import { CatalogView } from './components/CatalogView';
 import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
+import { AdminDashboard } from './components/AdminDashboard';
 import { Locale, Product, Item } from './types/catalog';
 import { CartLineItem } from './types/cart';
 import { OrderDocument } from './types/order';
-import { Layers, Activity } from 'lucide-react';
+import { Activity } from 'lucide-react';
 import './App.css';
 
 export const App: React.FC = () => {
@@ -99,17 +100,7 @@ export const App: React.FC = () => {
           />
         )}
 
-        {activeTab === 'admin' && (
-          <div className="empty-state">
-            <Layers size={48} className="empty-state-icon" />
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
-              Pet Store Modern Admin Dashboard
-            </h2>
-            <p style={{ maxWidth: '500px', margin: '0 auto', fontSize: '0.95rem' }}>
-              Pending orders list, approval workflows, and revenue summary metrics are scheduled for implementation in Task 6.4.
-            </p>
-          </div>
-        )}
+        {activeTab === 'admin' && <AdminDashboard />}
 
         {activeTab === 'migration' && (
           <div className="empty-state">

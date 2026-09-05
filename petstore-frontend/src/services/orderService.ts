@@ -38,19 +38,16 @@ class OrderApiService {
   }
 
   /**
-   * Retrieves paginated orders optionally filtered by status.
+   * Retrieves orders optionally filtered by status or user.
    */
-  async getOrders(status?: OrderStatus, page: number = 0, size: number = 20): Promise<{
-    content: OrderDocument[];
-    totalElements: number;
-    totalPages: number;
-  }> {
+  async getOrders(status?: OrderStatus, userId?: string): Promise<OrderDocument[]> {
     const params = new URLSearchParams();
     if (status) {
       params.set('status', status);
     }
-    params.set('page', String(page));
-    params.set('size', String(size));
+    if (userId) {
+      params.set('userId', userId);
+    }
 
     const response = await fetch(`${this.baseUrl}?${params.toString()}`);
     if (!response.ok) {
