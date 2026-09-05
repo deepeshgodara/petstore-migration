@@ -542,7 +542,7 @@ This granular checklist tracks the implementation of the preferred **Dual-Write 
 - [x] **Task 2.5**: Implement unit tests for domain documents, value objects, and migration parity metrics.
 
 ### Phase 3: Live Historical Baseline Extraction (Migration Worker)
-- [ ] **Task 3.1**: Build Spring Batch JDBC cursor reader targeting live legacy `petstoredb` (`CATEGORY`, `PRODUCT`, `ITEM`, `ITEM_DETAILS`).
+- [x] **Task 3.1**: Build Spring Batch JDBC cursor reader targeting live legacy `petstoredb` (`CATEGORY`, `PRODUCT`, `ITEM`, `ITEM_DETAILS`).
 - [ ] **Task 3.2**: Implement catalog transformation processor mapping multi-row relational locale records into single MongoDB product documents.
 - [ ] **Task 3.3**: Build order history reader targeting legacy `PUBLIC.PURCHASEORDER` and `PUBLIC.MANAGER` tables.
 - [ ] **Task 3.4**: Execute idempotent `bulkWrite` upserts into MongoDB with execution time and record count metrics.
