@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar, NavTab } from './components/Navbar';
 import { CatalogView } from './components/CatalogView';
+import { CartDrawer } from './components/CartDrawer';
+import { CheckoutModal } from './components/CheckoutModal';
 import { Locale, Product, Item } from './types/catalog';
 import { CartLineItem } from './types/cart';
+import { OrderDocument } from './types/order';
 import { Layers, Activity } from 'lucide-react';
 import './App.css';
 
@@ -10,6 +13,9 @@ export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavTab>('storefront');
   const [locale, setLocale] = useState<Locale>('en_US');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState<boolean>(false);
+
   const [cartItems, setCartItems] = useState<CartLineItem[]>(() => {
     try {
       const saved = localStorage.getItem('petstore_cart');
@@ -46,6 +52,31 @@ export const App: React.FC = () => {
     });
   };
 
+  const handleUpdateQuantity = (lineId: string, quantity: number) => {
+    setCartItems((prev) =>
+      prev.map((item) => (item.id === lineId ? { ...item, quantity } : item))
+    );
+  };
+
+  const handleRemoveItem = (lineId: string) => {
+    setCartItems((prev) => prev.filter((item) => item.id !== lineId));
+  };
+
+  const handleClearCart = () => {
+    setCartItems([]);
+  };
+
+  const handleProceedToCheckout = () => {
+    setIsCartOpen(false);
+    setIsCheckoutOpen(true);
+  };
+
+  const handleOrderSuccess = (order: OrderDocument) => {
+    console.log('Order successfully placed:', order.id);
+    // Clear cart contents upon order confirmation
+    setCartItems([]);
+  };
+
   return (
     <div className="app-container">
       <Navbar
@@ -56,10 +87,7 @@ export const App: React.FC = () => {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         cartCount={totalCartCount}
-        onOpenCart={() => {
-          // Open cart modal (implemented in Task 6.3)
-          console.log('Open Cart triggered');
-        }}
+        onOpenCart={() => setIsCartOpen(true)}
       />
 
       <main className="main-content">
@@ -95,6 +123,27 @@ export const App: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Slide-over Shopping Cart Drawer */}
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cartItems={cartItems}
+        onUpdateQuantity={handleUpdateQuantity}
+        onRemoveItem={handleRemoveItem}
+        onClearCart={handleClearCart}
+        onProceedToCheckout={handleProceedToCheckout}
+        locale={locale}
+      />
+
+      {/* Checkout Wizard Modal */}
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        cartItems={cartItems}
+        locale={locale}
+        onOrderSuccess={handleOrderSuccess}
+      />
     </div>
   );
 };
