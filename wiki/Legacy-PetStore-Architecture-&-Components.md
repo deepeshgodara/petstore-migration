@@ -1,6 +1,10 @@
 # Legacy Pet Store (v1.3.1_02) Architecture & Component Deep Dive
 
 > **Heritage Context**: The Java Pet Store 1.3.1_02 was designed by Sun Microsystems in 2002 as the official reference implementation for the **Java 2 Enterprise Edition (J2EE 1.3) BluePrints specification**. It demonstrated how to architect multi-tier enterprise web applications using Servlets, JSPs, Enterprise JavaBeans (EJBs), Java Message Service (JMS), and relational database persistence.
+>
+> 📖 **Architectural Blueprint Specifications**:
+> - **[Legacy High-Level Design (HLD)](Legacy-High-Level-Design)**: System Architecture, Deployment Topology, Network Boundaries, and DFDs.
+> - **[Legacy Low-Level Design (LLD)](Legacy-Low-Level-Design)**: Class Hierarchies, Sequence Lifecycles, Relational ER Schemas, and State Machines.
 
 ---
 

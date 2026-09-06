@@ -11,7 +11,11 @@ This wiki is the comprehensive, centralized knowledge base for architects, engin
 | Chapter | Description | Primary Audience |
 | :--- | :--- | :--- |
 | [**Architecture Overview**](Architecture-Overview) | Deep-dive into bounded contexts, the Dual-Write & Shadow Reconciliation pattern, and document modeling. | Architects, Lead Engineers |
+| [**Modern High-Level Design (HLD)**](Modern-High-Level-Design) | Modern system architecture, Docker deployment topology, network boundaries, and Level 0/1 DFDs. | Architects, DevOps, SREs |
+| [**Modern Low-Level Design (LLD)**](Modern-Low-Level-Design) | Microservice class diagrams, checkout/admin/supplier/chaos sequence diagrams, MongoDB BSON schemas, and flowcharts. | Developers, Architects |
 | [**Legacy Architecture & Components**](Legacy-PetStore-Architecture-&-Components) | In-depth breakdown of the 2002 J2EE BluePrints application: the 4 .ear archives, WAF framework, EJB 2.0 components, 3NF schema, and order flow. | Architects, Maintainers, Engineers |
+| [**Legacy High-Level Design (HLD)**](Legacy-High-Level-Design) | 2002 monolithic system architecture, enterprise packaging (.ear/.war/.jar), network boundaries, and baseline DFDs. | Architects, Engineers |
+| [**Legacy Low-Level Design (LLD)**](Legacy-Low-Level-Design) | 2002 WAF MVC class hierarchy, CMP 2.0 entity beans, FastLane DAO, relational ER schemas, and state machines. | Architects, Engineers |
 | [**Service Catalog**](Service-Catalog) | Detailed service specifications, runtime ports, configurations, REST endpoints, and Kafka topics. | Developers, Integrators |
 | [**On-Call Support & Maintenance**](OnCall-Support-&-Maintenance) | Production runbooks: how to maintain services, restart daemons, handle outages, and recover from failures. | On-Call Engineers, SREs |
 | [**Debugging & Troubleshooting Guide**](Debugging-&-Troubleshooting-Guide) | Triage procedures for data parity drift, Kafka lag, lock contention, and automated diagnostic scripts. | Support Engineers, Developers |

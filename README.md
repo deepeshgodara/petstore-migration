@@ -170,16 +170,19 @@ petstore1.3.1_02/
 │   ├── mongo_compass_connect.sh  # MongoDB Compass connection utility
 │   └── sync_wiki.sh              # Two-way GitHub Wiki synchronization tool
 │
-├── wiki/                         # Comprehensive 6-chapter technical documentation suite
+├── wiki/                         # Comprehensive technical documentation suite
 │   ├── Home.md
 │   ├── Architecture-Overview.md
+│   ├── Modern-High-Level-Design.md
+│   ├── Modern-Low-Level-Design.md
 │   ├── Legacy-PetStore-Architecture-&-Components.md
+│   ├── Legacy-High-Level-Design.md
+│   ├── Legacy-Low-Level-Design.md
 │   ├── Service-Catalog.md
 │   ├── OnCall-Support-&-Maintenance.md
 │   ├── Debugging-&-Troubleshooting-Guide.md
 │   └── Database-&-MongoDB-Compass-Guide.md
 │
-├── baseline_design/              # High-Level and Low-Level Design (LLD) diagrams
 ├── run.sh                        # Convenience runner launching the Java 21 thin runner
 ├── run_admin_client.sh           # Convenience wrapper launching the legacy Swing GUI
 └── README.md                     # Master repository documentation (this file)
@@ -434,9 +437,10 @@ For in-depth architectural analyses, operational playbooks, and runbooks, consul
 
 | Document | Link | Description |
 | :--- | :--- | :--- |
-| **GitHub Wiki** | [PetStore Migration Wiki](https://github.com/deepeshgodara/petstore-migration/wiki) | Complete 6-chapter wiki: Architecture Overview, Legacy Deep-Dive, Service Catalog, On-Call Runbooks, Troubleshooting, and MongoDB Compass Guide. |
+| **GitHub Wiki** | [PetStore Migration Wiki](https://github.com/deepeshgodara/petstore-migration/wiki) | Complete knowledge base: Architecture, HLD/LLD diagrams, Service Catalog, On-Call Runbooks, and Troubleshooting. |
+| **Modern Architecture HLD & LLD** | [`Modern-High-Level-Design`](wiki/Modern-High-Level-Design.md) / [`Modern-Low-Level-Design`](wiki/Modern-Low-Level-Design.md) | High-Level and Low-Level diagrams for the migrated modern application (Classes, Sequences, MongoDB ER, State Machines, Flowcharts). |
+| **Legacy Architecture HLD & LLD** | [`Legacy-High-Level-Design`](wiki/Legacy-High-Level-Design.md) / [`Legacy-Low-Level-Design`](wiki/Legacy-Low-Level-Design.md) | High-Level and Low-Level diagrams for the 2002 baseline (WAF MVC, EJB CMP, FastLane, relational schemas, JMS). |
 | **Modernization Design Doc** | [`MODERNIZATION_DESIGN_DOC.md`](MODERNIZATION_DESIGN_DOC.md) | Comprehensive 48KB architectural specification covering schema transformations, dual-write mechanics, and event schemas. |
-| **Legacy Architecture & LLD** | [`baseline_design/README.md`](baseline_design/README.md) | Low-level design diagrams: Class diagrams, Sequence diagrams, ER diagrams, and State machines for the 2002 baseline. |
 | **Docker Operations Guide** | [`DOCKER_GUIDE.md`](DOCKER_GUIDE.md) | Deep dive into the legacy container, OpenEJB configuration, and port mappings. |
 | **Project History & Issues** | [`PROJECT_HISTORY_AND_ISSUES.md`](PROJECT_HISTORY_AND_ISSUES.md) | Chronological log of all engineering challenges encountered and resolved during modernization. |
 
