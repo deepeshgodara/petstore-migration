@@ -2,6 +2,7 @@ import React from 'react';
 import { CartLineItem } from '../types/cart';
 import { Locale } from '../types/catalog';
 import { X, Trash2, ShoppingBag, ArrowRight, Plus, Minus } from 'lucide-react';
+import { getProductImageUrl, handleImageError } from '../utils/imageUtils';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -153,11 +154,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {cartItems.map((cartItem) => {
-                const img = cartItem.item.image
-                  ? `/images/${cartItem.item.image}`
-                  : cartItem.product.image
-                  ? `/images/${cartItem.product.image}`
-                  : '/images/birds_icon.gif';
+                const img = getProductImageUrl(cartItem.product, cartItem.item);
 
                 const lineTotal = Number(cartItem.item.listPrice) * cartItem.quantity;
                 const localizedName = cartItem.product.names?.[locale] || cartItem.product.name;
@@ -188,7 +185,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         padding: '4px',
                       }}
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/images/banner_logo.gif';
+                        handleImageError(e, cartItem.product.categoryId);
                       }}
                     />
 

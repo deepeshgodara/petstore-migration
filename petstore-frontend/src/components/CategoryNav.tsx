@@ -1,6 +1,7 @@
 import React from 'react';
 import { Category, Locale } from '../types/catalog';
 import { Sparkles } from 'lucide-react';
+import { getCategoryIcon } from '../utils/imageUtils';
 
 interface CategoryNavProps {
   categories: Category[];
@@ -30,7 +31,7 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
 
       {categories.map((cat) => {
         const isActive = selectedCategory === cat.id;
-        const iconSrc = cat.image ? `/images/${cat.image}` : '/images/birds_icon.gif';
+        const iconSrc = getCategoryIcon(cat.id, cat.image);
 
         return (
           <button

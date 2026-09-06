@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Product, Item, Locale } from '../types/catalog';
 import { X, Check, ShoppingBag } from 'lucide-react';
+import { getProductImageUrl, handleImageError } from '../utils/imageUtils';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -77,11 +78,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     }
   };
 
-  const itemImage = selectedItem?.image
-    ? `/images/${selectedItem.image}`
-    : product.image
-    ? `/images/${product.image}`
-    : '/images/birds_icon.gif';
+  const itemImage = getProductImageUrl(product, selectedItem);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -114,7 +111,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 filter: 'drop-shadow(0 12px 20px rgba(0,0,0,0.5))',
               }}
               onError={(e) => {
-                (e.target as HTMLImageElement).src = '/images/banner_logo.gif';
+                handleImageError(e, product.categoryId);
               }}
             />
             <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>

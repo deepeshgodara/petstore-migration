@@ -15,6 +15,7 @@ import {
   Layers,
   Check,
 } from 'lucide-react';
+import { getProductImageUrl } from '../../utils/imageUtils';
 
 export const SupplierInventoryPage: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
@@ -309,9 +310,7 @@ export const SupplierInventoryPage: React.FC = () => {
                 const isModified = draftQty !== item.inventoryQuantity;
                 const isSaving = savingItemId === item.itemId;
 
-                const petImage = item.image
-                  ? `/images/${item.image.trim()}`
-                  : '/images/banner_logo.gif';
+                const petImage = getProductImageUrl({ id: item.productId }, item);
 
                 const isLow = item.inventoryQuantity < 500;
                 const isCritical = item.inventoryQuantity < 100;

@@ -6,6 +6,7 @@ import { supplierService } from '../../services/supplierService';
 import { Item } from '../../types/catalog';
 import { User, Package, Calendar, DollarSign, Clock, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getProductImageUrl, handleImageError } from '../../utils/imageUtils';
 
 export const AccountPage: React.FC = () => {
   const { user } = useAuth();
@@ -51,12 +52,11 @@ export const AccountPage: React.FC = () => {
     const productName = li.productName || catalogItem?.productName || li.productId;
     const attribute = li.itemAttribute || catalogItem?.attribute || '';
     const rawImage = li.image || catalogItem?.image || '';
-    const imageSrc = rawImage
-      ? rawImage.startsWith('/')
-        ? rawImage
-        : `/images/${rawImage}`
-      : '/images/banner_logo.gif';
-    return { productName, attribute, imageSrc };
+    const imageSrc = getProductImageUrl(
+      { id: li.productId, categoryId: li.categoryId, image: rawImage },
+      { image: rawImage }
+    );
+    return { productName, attribute, imageSrc, categoryId: li.categoryId };
   };
 
   if (!user) {
@@ -264,7 +264,7 @@ export const AccountPage: React.FC = () => {
                                 padding: '2px',
                               }}
                               onError={(e) => {
-                                (e.target as HTMLImageElement).src = '/images/banner_logo.gif';
+                                handleImageError(e, itemInfo.categoryId);
                               }}
                             />
                             <div>

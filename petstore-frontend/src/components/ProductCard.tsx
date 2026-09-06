@@ -1,6 +1,7 @@
 import React from 'react';
 import { Product, Item, Locale } from '../types/catalog';
 import { Eye, Plus } from 'lucide-react';
+import { getProductImageUrl, handleImageError } from '../utils/imageUtils';
 
 interface ProductCardProps {
   product: Product;
@@ -23,7 +24,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const defaultItem = product.items && product.items.length > 0 ? product.items[0] : null;
 
-  const imgSrc = product.image ? `/images/${product.image}` : '/images/birds_icon.gif';
+  const imgSrc = getProductImageUrl(product, defaultItem);
 
   const viewDetailsLabel =
     locale === 'ja_JP' ? '詳細を見る' : locale === 'zh_CN' ? '查看详情' : 'Quick View';
@@ -39,10 +40,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           src={imgSrc}
           alt={product.name}
           className="product-card-img"
-          onError={(e) => {
-            // Replace with fallback icon on error
-            (e.target as HTMLImageElement).src = '/images/banner_logo.gif';
-          }}
+          onError={(e) => handleImageError(e, product.categoryId)}
         />
       </div>
 

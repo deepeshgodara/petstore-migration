@@ -19,6 +19,7 @@ import {
   PieChart,
 } from 'lucide-react';
 import { AdminAnalyticsView } from './AdminAnalyticsView';
+import { getProductImageUrl, handleImageError } from '../utils/imageUtils';
 
 export const AdminDashboard: React.FC = () => {
   const [adminTab, setAdminTab] = useState<'orders' | 'analytics'>('orders');
@@ -101,11 +102,10 @@ export const AdminDashboard: React.FC = () => {
     const productName = li.productName || catalogItem?.productName || li.productId;
     const attribute = li.itemAttribute || catalogItem?.attribute || '';
     const rawImage = li.image || catalogItem?.image || '';
-    const imageSrc = rawImage
-      ? rawImage.startsWith('/')
-        ? rawImage
-        : `/images/${rawImage}`
-      : '/images/banner_logo.gif';
+    const imageSrc = getProductImageUrl(
+      { id: li.productId, categoryId: li.categoryId, image: rawImage },
+      { image: rawImage }
+    );
     return {
       productName,
       attribute,
@@ -654,7 +654,7 @@ export const AdminDashboard: React.FC = () => {
                                     flexShrink: 0,
                                   }}
                                   onError={(e) => {
-                                    (e.target as HTMLImageElement).src = '/images/banner_logo.gif';
+                                    handleImageError(e, info.categoryId);
                                   }}
                                 />
                                 <div style={{ minWidth: 0 }}>
@@ -705,7 +705,7 @@ export const AdminDashboard: React.FC = () => {
                                           zIndex: 3 - i,
                                         }}
                                         onError={(e) => {
-                                          (e.target as HTMLImageElement).src = '/images/banner_logo.gif';
+                                          handleImageError(e, itemInfo.categoryId);
                                         }}
                                       />
                                     );
@@ -939,7 +939,7 @@ export const AdminDashboard: React.FC = () => {
                               borderRadius: 'var(--radius-xs)',
                             }}
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = '/images/banner_logo.gif';
+                              handleImageError(e, info.categoryId);
                             }}
                           />
                         </div>
