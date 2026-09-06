@@ -2,7 +2,7 @@
  * Type definitions for Authentication, Authorization, and Role-Based Access Control.
  */
 
-export type Role = 'ROLE_CUSTOMER' | 'ROLE_ADMIN' | 'ROLE_ENGINEER' | 'ROLE_SUPERADMIN';
+export type Role = 'ROLE_CUSTOMER' | 'ROLE_ADMIN' | 'ROLE_SUPPLIER' | 'ROLE_ENGINEER' | 'ROLE_SUPERADMIN';
 
 export interface User {
   username: string;
@@ -45,6 +45,16 @@ export const DEMO_ACCOUNTS: Record<string, { user: User; passwordHash: string }>
       token: 'jwt_mock_token_admin_ops',
     },
     passwordHash: 'admin123',
+  },
+  supplier: {
+    user: {
+      username: 'supplier',
+      name: 'Acme Pet Supply Co.',
+      email: 'supplier@petstore.internal',
+      role: 'ROLE_SUPPLIER',
+      token: 'jwt_mock_token_supplier_inventory',
+    },
+    passwordHash: 'supplier',
   },
   engineer: {
     user: {

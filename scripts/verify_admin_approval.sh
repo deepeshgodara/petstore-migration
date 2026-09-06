@@ -191,14 +191,23 @@ fi
 
 # Step 7: Verify Updated Admin KPI Metrics
 echo -e "\n${BOLD}[Step 7/7] Verifying Admin Dashboard KPI counters updated dynamically...${NC}"
-UPDATED_METRICS=$(curl -s "${VITE_URL}/api/v1/orders/admin/summary")
-UPDATED_TOTAL=$(echo "${UPDATED_METRICS}" | grep -o '"totalOrders":[0-9]*' | cut -d':' -f2)
-UPDATED_PENDING=$(echo "${UPDATED_METRICS}" | grep -o '"PENDING":[0-9]*' | cut -d':' -f2 || echo "0")
-[ -z "${UPDATED_PENDING}" ] && UPDATED_PENDING=0
-UPDATED_APPROVED=$(echo "${UPDATED_METRICS}" | grep -o '"APPROVED":[0-9]*' | cut -d':' -f2 || echo "0")
-[ -z "${UPDATED_APPROVED}" ] && UPDATED_APPROVED=0
-
 EXPECTED_APPROVED=$((INITIAL_APPROVED + 1))
+
+UPDATED_APPROVED=0
+for i in {1..10}; do
+  UPDATED_METRICS=$(curl -s "${VITE_URL}/api/v1/orders/admin/summary")
+  UPDATED_TOTAL=$(echo "${UPDATED_METRICS}" | grep -o '"totalOrders":[0-9]*' | cut -d':' -f2)
+  UPDATED_PENDING=$(echo "${UPDATED_METRICS}" | grep -o '"PENDING":[0-9]*' | cut -d':' -f2 || echo "0")
+  [ -z "${UPDATED_PENDING}" ] && UPDATED_PENDING=0
+  UPDATED_APPROVED=$(echo "${UPDATED_METRICS}" | grep -o '"APPROVED":[0-9]*' | cut -d':' -f2 || echo "0")
+  [ -z "${UPDATED_APPROVED}" ] && UPDATED_APPROVED=0
+
+  if [ "${UPDATED_APPROVED}" -eq "${EXPECTED_APPROVED}" ]; then
+    break
+  fi
+  sleep 0.5
+done
+
 echo -e "  ${GREEN}✓${NC} Admin Summary Updated:"
 echo -e "      Total Orders:    ${UPDATED_TOTAL} (initial: ${INITIAL_TOTAL})"
 echo -e "      Pending Queue:   ${UPDATED_PENDING} (initial: ${INITIAL_PENDING})"

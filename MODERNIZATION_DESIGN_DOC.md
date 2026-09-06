@@ -521,6 +521,7 @@ During the playback session, evaluators will probe into design rationale. The ta
 | **"How do you resolve data drift detected during Shadow Reconciliation?"** | *"Our Shadow Reconciler logs actionable diffs with document IDs and field paths. For transient timing drift (writes in flight), the reconciler implements a 500ms grace window. For true data drift, an automated reconciliation worker reads the authoritative record from the legacy SoR, transforms it, and performs an idempotent upsert into MongoDB, restoring parity."* |
 | **"Why MongoDB over PostgreSQL for the target architecture?"** | *"E-commerce catalog and order domains are naturally hierarchical document aggregates. In PostgreSQL, retrieving an order with items, localized descriptions, and addresses requires 5+ table joins. In MongoDB, it is a single index lookup (`O(1)`), reducing P99 query latency from 85ms to < 4ms. Furthermore, MongoDB's flexible schema easily accommodates multi-lingual key-value maps without composite-key schema migrations."* |
 | **"How does the Admin Portal migrate from Java Web Start without disruption?"** | *"We replace the legacy Swing `AdminApp.jar` with a modern React 18 Web Admin Portal consuming REST endpoints (`/api/v1/admin/orders`). Because both the legacy Admin client and the modern portal talk to the synchronized data layer via dual-write, administrators can approve an order in the modern web UI, and the legacy Swing client immediately reflects the status change on its next refresh."* |
+| **"How is the legacy 2002 Supplier component (`supplier.ear`) modernized?"** | *"The legacy J2EE Pet Store shipped with a standalone enterprise archive (`supplier.ear`) serving JSP inventory screens (`/supplier/displayinventory.jsp`). We decommissioned the fragile JSP container and replaced it with a modern `/supplier` route package governed by `ROLE_SUPPLIER` RBAC. Suppliers manage inventory levels via REST endpoints (`GET /api/v1/items`, `PUT /api/v1/items/{itemId}/inventory`) backed by MongoDB atomic updates, updating stock levels instantly across the customer storefront and legacy sync."* |
 
 ---
 
@@ -564,13 +565,15 @@ This granular checklist tracks the implementation of the preferred **Dual-Write 
 ### Phase 6: Modern React 18 Single-Page Application
 - [x] **Task 6.1**: Scaffold React 18 + Vite + TypeScript application in `petstore-frontend/`.
 - [x] **Task 6.2**: Implement responsive storefront catalog browsing with live multi-lingual switching (EN, JA, ZH).
-- [x] **Task 6.3**: Implement client-side shopping cart with instant quantity adjustments and checkout modal.
+- [x] **Task 6.3**: Implement client-side shopping cart with dynamic multi-lingual name and attribute translation on locale switch.
 - [x] **Task 6.4**: Build modern Admin Dashboard replacing legacy Swing client, with real-time pending order approval and sales charts.
 - [x] **Task 6.5**: Build visual Migration Parity Monitor tab displaying live dual-write sync status and reconciliation metrics.
-- [x] **Task 6.6**: Implement Route-Packaged Architecture (`/`, `/account`, `/admin`, `/ops`) with Role-Based Access Control (RBAC), Authentication Modal, Protected Routes, and Customer Order History Page.
+- [x] **Task 6.6**: Implement Route-Packaged Architecture (`/`, `/account`, `/admin`, `/ops`, `/supplier`) with Role-Based Access Control (RBAC), Authentication Modal, Protected Routes, and Customer Order History Page.
+- [x] **Task 6.7**: Build modern Supplier Portal (`/supplier`) with warehouse stock KPIs, inventory health indicators, quick replenish actions, and live stock adjustments.
 
 ### Phase 7: Verification & Playback Interview Demonstration
 - [x] **Task 7.1**: Perform end-to-end checkout flow in modern UI, verifying write propagation to MongoDB and legacy DB.
 - [x] **Task 7.2**: Demonstrate automated Admin Client approval flow in modern web dashboard.
 - [x] **Task 7.3**: Execute chaos experiment: simulate secondary Mongo failure and verify legacy application continues uninterrupted with DLQ recovery.
 - [x] **Task 7.4**: Author comprehensive `README.md` with step-by-step developer build/run instructions for the presentation playback.
+- [x] **Task 7.5**: Execute automated supplier inventory verification suite (`scripts/verify_supplier_inventory.sh`) validating REST endpoints and customer catalog reflection.

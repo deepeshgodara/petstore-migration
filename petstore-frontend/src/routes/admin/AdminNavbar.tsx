@@ -35,6 +35,14 @@ export const AdminNavbar: React.FC = () => {
           </Link>
 
           <Link
+            to="/supplier"
+            className="btn-secondary"
+            style={{ textDecoration: 'none', padding: '0.45rem 0.85rem', fontSize: '0.8rem', gap: '0.4rem', color: '#f59e0b' }}
+          >
+            <span>Supplier</span>
+          </Link>
+
+          <Link
             to="/ops"
             className="btn-secondary"
             style={{ textDecoration: 'none', padding: '0.45rem 0.85rem', fontSize: '0.8rem', gap: '0.4rem', color: '#34d399' }}

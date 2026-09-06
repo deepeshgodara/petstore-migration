@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingBag, Search, X, Store, Globe, User as UserIcon, LogOut, Shield, Activity, Package } from 'lucide-react';
+import { ShoppingBag, Search, X, Store, Globe, User as UserIcon, LogOut, Shield, Activity, Package, Truck } from 'lucide-react';
 import { Locale, SUPPORTED_LOCALES } from '../../types/catalog';
 import { useAuth } from '../../auth';
 import { Link, useNavigate } from 'react-router-dom';
@@ -77,6 +77,16 @@ export const StorefrontNavbar: React.FC<StorefrontNavbarProps> = ({
           >
             <Shield size={13} color="#38bdf8" />
             <span style={{ color: '#38bdf8' }}>Admin</span>
+          </Link>
+
+          <Link
+            to="/supplier"
+            className="tab-btn"
+            style={{ textDecoration: 'none', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)', padding: '0.35rem 0.65rem' }}
+            title="Restricted Supplier & Inventory Portal"
+          >
+            <Truck size={13} color="#f59e0b" />
+            <span style={{ color: '#f59e0b' }}>Supplier</span>
           </Link>
 
           <Link

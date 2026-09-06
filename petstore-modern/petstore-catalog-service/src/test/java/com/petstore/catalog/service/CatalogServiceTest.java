@@ -109,4 +109,38 @@ class CatalogServiceTest {
     Optional<ItemResponse> resultJa = catalogService.getItemById("EST-18", "ja_JP");
     assertThat(resultJa.get().attribute()).isEqualTo("おとな 雄");
   }
+
+  @Test
+  @DisplayName("Should return all catalog items across products with inventory")
+  void shouldGetAllItems() {
+    ItemDocument item1 = new ItemDocument(
+        "EST-1", BigDecimal.valueOf(16.50), BigDecimal.valueOf(10.00),
+        Map.of("en_US", "Large"), "fish.gif", 100);
+    ProductDocument p1 = new ProductDocument(
+        "FI-SW-01", "FISH", Map.of("en_US", "Angelfish"), null, "fish.gif", List.of(item1));
+
+    when(productRepository.findAll()).thenReturn(List.of(p1));
+
+    List<ItemResponse> items = catalogService.getAllItems("en_US");
+    assertThat(items).hasSize(1);
+    assertThat(items.get(0).itemId()).isEqualTo("EST-1");
+    assertThat(items.get(0).inventoryQuantity()).isEqualTo(100);
+  }
+
+  @Test
+  @DisplayName("Should update inventory stock quantity successfully")
+  void shouldUpdateInventorySuccessfully() {
+    ItemDocument item = new ItemDocument(
+        "EST-1", BigDecimal.valueOf(16.50), BigDecimal.valueOf(10.00),
+        Map.of("en_US", "Large"), "fish.gif", 50);
+    ProductDocument product = new ProductDocument(
+        "FI-SW-01", "FISH", Map.of("en_US", "Angelfish"), null, "fish.gif", List.of(item));
+
+    when(productRepository.findByItemId("EST-1")).thenReturn(Optional.of(product));
+
+    Optional<ItemResponse> updated = catalogService.updateItemInventory("EST-1", 500, "en_US");
+    assertThat(updated).isPresent();
+    assertThat(updated.get().inventoryQuantity()).isEqualTo(500);
+  }
 }
+

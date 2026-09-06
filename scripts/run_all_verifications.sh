@@ -21,16 +21,19 @@ echo -e "${BOLD}${CYAN}=========================================================
 echo -e "${BOLD}${CYAN}  PET STORE MODERNIZATION: MASTER VERIFICATION PLAYBACK SUITE      ${NC}"
 echo -e "${BOLD}${CYAN}===================================================================${NC}"
 
-echo -e "\n${BOLD}>>> [1/3] Executing Task 7.1: End-to-End Checkout Verification...${NC}"
+echo -e "\n${BOLD}>>> [1/4] Executing Task 7.1: End-to-End Checkout Verification...${NC}"
 "${SCRIPT_DIR}/verify_e2e_checkout.sh"
 
-echo -e "\n${BOLD}>>> [2/3] Executing Task 7.2: Automated Admin Approval Verification...${NC}"
+echo -e "\n${BOLD}>>> [2/4] Executing Task 7.2: Automated Admin Approval Verification...${NC}"
 "${SCRIPT_DIR}/verify_admin_approval.sh"
 
-echo -e "\n${BOLD}>>> [3/3] Executing Task 7.3: Chaos Outage & DLQ Recovery Test...${NC}"
+echo -e "\n${BOLD}>>> [3/4] Executing Task 7.3: Chaos Outage & DLQ Recovery Test...${NC}"
 "${SCRIPT_DIR}/chaos_mongo_failure_test.sh"
 
+echo -e "\n${BOLD}>>> [4/4] Executing Supplier & Inventory Management Verification...${NC}"
+"${SCRIPT_DIR}/verify_supplier_inventory.sh"
+
 echo -e "\n${BOLD}${GREEN}===================================================================${NC}"
-echo -e "${BOLD}${GREEN}  ★ ALL PHASE 7 PLAYBACK SUITES PASSED WITH 100% SUCCESS! ★        ${NC}"
+echo -e "${BOLD}${GREEN}  ★ ALL VERIFICATION PLAYBACK SUITES PASSED WITH 100% SUCCESS! ★   ${NC}"
 echo -e "${BOLD}${GREEN}===================================================================${NC}\n"
 exit 0

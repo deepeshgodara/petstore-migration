@@ -110,4 +110,64 @@ public class CatalogService {
             .map(item -> ItemResponse.of(item, product, locale))
         );
   }
+
+  /**
+   * Retrieves all items across all products with stock and localized details.
+   *
+   * @param locale target locale
+   * @return list of localized item responses
+   */
+  public List<ItemResponse> getAllItems(String locale) {
+    return productRepository.findAll().stream()
+        .flatMap(prod -> {
+          if (prod.getItems() == null) {
+            return java.util.stream.Stream.empty();
+          }
+          return prod.getItems().stream()
+              .map(item -> ItemResponse.of(item, prod, locale));
+        })
+        .sorted(Comparator.comparing(ItemResponse::itemId))
+        .toList();
+  }
+
+  /**
+   * Updates an item's inventory stock quantity in MongoDB.
+   *
+   * @param itemId item SKU identifier
+   * @param newQuantity new non-negative inventory stock quantity
+   * @param locale target locale for response
+   * @return updated ItemResponse or empty optional if not found
+   */
+  public Optional<ItemResponse> updateItemInventory(
+      String itemId, int newQuantity, String locale) {
+    if (newQuantity < 0) {
+      throw new IllegalArgumentException("Inventory quantity cannot be negative");
+    }
+
+    Optional<ProductDocument> productOpt = productRepository.findByItemId(itemId);
+    if (productOpt.isEmpty()) {
+      return Optional.empty();
+    }
+
+    ProductDocument product = productOpt.get();
+    boolean found = false;
+    if (product.getItems() != null) {
+      for (ItemDocument item : product.getItems()) {
+        if (itemId.equals(item.getItemId())) {
+          item.setInventoryQuantity(newQuantity);
+          found = true;
+          break;
+        }
+      }
+    }
+
+    if (!found) {
+      return Optional.empty();
+    }
+
+    productRepository.save(product);
+    log.info("Updated item [{}] inventory quantity to [{}]", itemId, newQuantity);
+    return getItemById(itemId, locale);
+  }
 }
+

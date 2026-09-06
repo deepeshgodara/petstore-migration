@@ -126,6 +126,7 @@ Rather than maintaining disparate web applications, the platform features a sing
 | `/` | **Storefront Catalog** | *Public* | Multi-lingual pet browsing (EN, JA, ZH), category filtering, 43 authentic GIF pet assets, slide-over cart drawer, instant checkout modal. |
 | `/account` | **Customer Account** | `ROLE_CUSTOMER`, `ROLE_ADMIN`, `ROLE_SUPERADMIN` | Customer profile management, real-time order history, line item inspection, delivery status tracking. |
 | `/admin` | **Admin Dashboard** | `ROLE_ADMIN`, `ROLE_SUPERADMIN` | Modern web replacement for legacy Swing client (`petstoreadmin.ear`). Real-time sales KPIs, pending approval queue, one-click order approval / rejection. |
+| `/supplier` | **Supplier Portal** | `ROLE_SUPPLIER`, `ROLE_ADMIN`, `ROLE_SUPERADMIN` | Modern web replacement for legacy JSP (`supplier.ear`). Real-time inventory tracking, warehouse valuation, stock health progress bars, and one-click stock adjustments. |
 | `/ops` | **Migration Parity Monitor**| `ROLE_ENGINEER`, `ROLE_SUPERADMIN` | Real-time dual-write replication monitor, drift detection, on-demand shadow audit execution. |
 
 ### Pre-Configured Demo Credentials
@@ -135,7 +136,8 @@ The login modal contains quick-select preset badges for immediate evaluation:
 | Identity | Username | Password | Assigned Role | Access Scope |
 | :--- | :--- | :--- | :--- | :--- |
 | **Shopper** | `j2ee` | `j2ee` | `ROLE_CUSTOMER` | Catalog, Cart, `/account` |
-| **Admin** | `admin` | `admin123` | `ROLE_ADMIN` | Catalog, `/account`, `/admin` |
+| **Admin** | `admin` | `admin123` | `ROLE_ADMIN` | Catalog, `/account`, `/admin`, `/supplier` |
+| **Supplier** | `supplier` | `supplier` | `ROLE_SUPPLIER` | Catalog, `/supplier` |
 | **Engineer** | `engineer` | `eng123` | `ROLE_ENGINEER` | Catalog, `/ops` |
 | **Super Admin** | `root` | `root123` | `ROLE_SUPERADMIN` | Unrestricted Access across all routes |
 
@@ -236,6 +238,12 @@ Simulates the modern web replacement for `petstoreadmin.ear`: captures baseline 
 Simulates a total secondary datastore outage by pausing the `petstore-mongo` container, verifies that the legacy Pet Store application continues serving traffic with zero interruption (HTTP 200), proves fault-isolated Dead-Letter Queue (DLQ) routing on topic `petstore.orders.dlq`, unpauses MongoDB, and executes post-recovery parity healing:
 ```bash
 ./scripts/chaos_mongo_failure_test.sh
+```
+
+### 5. Supplier & Inventory Management Verification
+Simulates the modern web replacement for legacy `supplier.ear`: fetches full inventory catalog (28 SKUs), tests stock level adjustments through `PUT /api/v1/items/{itemId}/inventory`, confirms atomic MongoDB persistence in `petstore_products`, and validates immediate customer-facing REST reflection:
+```bash
+./scripts/verify_supplier_inventory.sh
 ```
 
 ---

@@ -3,12 +3,15 @@ package com.petstore.catalog.web;
 import com.petstore.catalog.dto.CategoryResponse;
 import com.petstore.catalog.dto.ItemResponse;
 import com.petstore.catalog.dto.ProductResponse;
+import com.petstore.catalog.dto.UpdateInventoryRequest;
 import com.petstore.catalog.service.CatalogService;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -105,4 +108,39 @@ public class CatalogController {
         .map(ResponseEntity::ok)
         .orElse(ResponseEntity.notFound().build());
   }
+
+  /**
+   * Retrieves all catalog items across all products with stock and localized details.
+   *
+   * @param locale requested locale (defaults to en_US)
+   * @return list of localized item responses
+   */
+  @GetMapping("/items")
+  public ResponseEntity<List<ItemResponse>> getAllItems(
+      @RequestParam(name = "locale", defaultValue = "en_US") String locale) {
+    List<ItemResponse> items = catalogService.getAllItems(locale);
+    return ResponseEntity.ok(items);
+  }
+
+  /**
+   * Updates an item's inventory stock quantity in MongoDB.
+   *
+   * @param itemId item SKU identifier (e.g., "EST-1")
+   * @param request payload containing new non-negative inventory stock quantity
+   * @param locale requested locale for response
+   * @return updated ItemResponse or 404 Not Found
+   */
+  @PutMapping("/items/{itemId}/inventory")
+  public ResponseEntity<ItemResponse> updateItemInventory(
+      @PathVariable String itemId,
+      @RequestBody UpdateInventoryRequest request,
+      @RequestParam(name = "locale", defaultValue = "en_US") String locale) {
+    if (request == null) {
+      return ResponseEntity.badRequest().build();
+    }
+    return catalogService.updateItemInventory(itemId, request.quantity(), locale)
+        .map(ResponseEntity::ok)
+        .orElse(ResponseEntity.notFound().build());
+  }
 }
+

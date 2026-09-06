@@ -8,6 +8,7 @@ import { CatalogView } from './components/CatalogView';
 import { AccountPage } from './routes/storefront/AccountPage';
 import { AdminLayout } from './routes/admin/AdminLayout';
 import { AdminOrdersPage } from './routes/admin/AdminOrdersPage';
+import { SupplierLayout, SupplierInventoryPage } from './routes/supplier';
 import { OpsLayout } from './routes/ops/OpsLayout';
 import { ParityMonitorPage } from './routes/ops/ParityMonitorPage';
 import { CartDrawer } from './components/CartDrawer';
@@ -134,6 +135,18 @@ export const AppContent: React.FC = () => {
           }
         >
           <Route index element={<AdminOrdersPage />} />
+        </Route>
+
+        {/* Restricted Supplier & Inventory Portal Route Package */}
+        <Route
+          path="/supplier"
+          element={
+            <ProtectedRoute requiredRole="ROLE_SUPPLIER" portalTitle="Supplier & Inventory Management">
+              <SupplierLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<SupplierInventoryPage />} />
         </Route>
 
         {/* Restricted DevOps / Engineering Telemetry Console Route Package */}

@@ -18,6 +18,7 @@ export const AccessDeniedGate: React.FC<AccessDeniedGateProps> = ({
   const roleNameMap: Record<Role, string> = {
     ROLE_CUSTOMER: 'Customer',
     ROLE_ADMIN: 'Store Operations Administrator',
+    ROLE_SUPPLIER: 'Supplier / Inventory Manager',
     ROLE_ENGINEER: 'Data Reliability / DevOps Engineer',
     ROLE_SUPERADMIN: 'Platform Superadmin',
   };

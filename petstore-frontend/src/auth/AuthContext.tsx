@@ -60,6 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const hasRole = (requiredRole: Role): boolean => {
     if (!user) return false;
     if (user.role === 'ROLE_SUPERADMIN') return true;
+    if (user.role === 'ROLE_ADMIN' && requiredRole === 'ROLE_SUPPLIER') return true;
     if (user.role === requiredRole) return true;
     return false;
   };

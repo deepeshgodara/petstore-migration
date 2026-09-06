@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth, DEMO_ACCOUNTS } from '../../auth';
-import { X, Lock, Shield, User as UserIcon, AlertCircle, KeyRound, Sparkles } from 'lucide-react';
+import { X, Lock, Shield, User as UserIcon, AlertCircle, KeyRound, Sparkles, Truck } from 'lucide-react';
 
 export const LoginModal: React.FC = () => {
   const { isLoginModalOpen, closeLoginModal, login, targetRoleHint } = useAuth();
@@ -8,6 +8,8 @@ export const LoginModal: React.FC = () => {
   const defaultUser =
     targetRoleHint === 'ROLE_ADMIN'
       ? DEMO_ACCOUNTS.admin.user.username
+      : targetRoleHint === 'ROLE_SUPPLIER'
+      ? DEMO_ACCOUNTS.supplier.user.username
       : targetRoleHint === 'ROLE_ENGINEER'
       ? DEMO_ACCOUNTS.engineer.user.username
       : 'j2ee';
@@ -15,6 +17,8 @@ export const LoginModal: React.FC = () => {
   const defaultPass =
     targetRoleHint === 'ROLE_ADMIN'
       ? DEMO_ACCOUNTS.admin.passwordHash
+      : targetRoleHint === 'ROLE_SUPPLIER'
+      ? DEMO_ACCOUNTS.supplier.passwordHash
       : targetRoleHint === 'ROLE_ENGINEER'
       ? DEMO_ACCOUNTS.engineer.passwordHash
       : 'j2ee';
@@ -83,6 +87,8 @@ export const LoginModal: React.FC = () => {
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.2rem' }}>
             {targetRoleHint === 'ROLE_ADMIN'
               ? 'Administrator credentials required to access order management'
+              : targetRoleHint === 'ROLE_SUPPLIER'
+              ? 'Supplier credentials required to manage inventory & supply stock'
               : targetRoleHint === 'ROLE_ENGINEER'
               ? 'Engineer credentials required to access migration telemetry'
               : 'Sign in to access your orders, cart, and pet preferences'}
@@ -184,6 +190,16 @@ export const LoginModal: React.FC = () => {
             <button
               type="button"
               className="btn-secondary"
+              onClick={() => handleSelectPreset('supplier')}
+              style={{ fontSize: '0.75rem', padding: '0.45rem 0.6rem', justifyContent: 'flex-start', color: '#f59e0b' }}
+            >
+              <Truck size={13} />
+              <span>Supplier (supplier)</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn-secondary"
               onClick={() => handleSelectPreset('engineer')}
               style={{ fontSize: '0.75rem', padding: '0.45rem 0.6rem', justifyContent: 'flex-start', color: '#34d399' }}
             >
@@ -195,7 +211,7 @@ export const LoginModal: React.FC = () => {
               type="button"
               className="btn-secondary"
               onClick={() => handleSelectPreset('root')}
-              style={{ fontSize: '0.75rem', padding: '0.45rem 0.6rem', justifyContent: 'flex-start', color: '#c084fc' }}
+              style={{ fontSize: '0.75rem', padding: '0.45rem 0.6rem', justifyContent: 'flex-start', color: '#c084fc', gridColumn: 'span 2' }}
             >
               <Lock size={13} />
               <span>Superadmin (root)</span>
