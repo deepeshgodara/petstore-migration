@@ -16,9 +16,12 @@ import {
   Layers,
   Search,
   AlertTriangle,
+  PieChart,
 } from 'lucide-react';
+import { AdminAnalyticsView } from './AdminAnalyticsView';
 
 export const AdminDashboard: React.FC = () => {
+  const [adminTab, setAdminTab] = useState<'orders' | 'analytics'>('orders');
   const [orders, setOrders] = useState<OrderDocument[]>([]);
   const [summary, setSummary] = useState<OrderSummaryResponse | null>(null);
   const [catalogMap, setCatalogMap] = useState<Record<string, Item>>({});
@@ -190,43 +193,129 @@ export const AdminDashboard: React.FC = () => {
         </button>
       </div>
 
-      {/* Alert Notification */}
-      {feedbackMsg && (
-        <div
-          style={{
-            padding: '0.85rem 1.25rem',
-            borderRadius: 'var(--radius-md)',
-            marginBottom: '1.5rem',
-            background:
-              feedbackMsg.type === 'success'
-                ? 'rgba(16, 185, 129, 0.15)'
-                : 'rgba(244, 63, 94, 0.15)',
-            border: `1px solid ${
-              feedbackMsg.type === 'success'
-                ? 'rgba(16, 185, 129, 0.4)'
-                : 'rgba(244, 63, 94, 0.4)'
-            }`,
-            color: feedbackMsg.type === 'success' ? '#6ee7b7' : '#fda4af',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.6rem',
-            fontSize: '0.875rem',
-          }}
-        >
-          {feedbackMsg.type === 'success' ? <Check size={16} /> : <AlertTriangle size={16} />}
-          <span>{feedbackMsg.text}</span>
-        </div>
-      )}
-
-      {/* KPI Cards Grid */}
+      {/* Admin Sub-navigation Tabs */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1rem',
+          display: 'flex',
+          background: 'rgba(15, 23, 42, 0.85)',
+          padding: '0.35rem',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--border-subtle)',
+          width: 'fit-content',
+          gap: '0.35rem',
           marginBottom: '1.75rem',
         }}
       >
+        <button
+          type="button"
+          onClick={() => setAdminTab('orders')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.55rem 1.15rem',
+            borderRadius: 'var(--radius-md)',
+            border: 'none',
+            fontSize: '0.875rem',
+            fontWeight: adminTab === 'orders' ? 700 : 500,
+            background: adminTab === 'orders' ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'transparent',
+            color: adminTab === 'orders' ? '#ffffff' : 'var(--text-secondary)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            boxShadow: adminTab === 'orders' ? '0 2px 10px rgba(99, 102, 241, 0.3)' : 'none',
+          }}
+        >
+          <Package size={16} />
+          <span>Orders Management</span>
+          <span
+            style={{
+              fontSize: '0.7rem',
+              padding: '0.1rem 0.4rem',
+              borderRadius: 'var(--radius-full)',
+              background: adminTab === 'orders' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)',
+            }}
+          >
+            {totalCount}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setAdminTab('analytics')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.55rem 1.15rem',
+            borderRadius: 'var(--radius-md)',
+            border: 'none',
+            fontSize: '0.875rem',
+            fontWeight: adminTab === 'analytics' ? 700 : 500,
+            background: adminTab === 'analytics' ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' : 'transparent',
+            color: adminTab === 'analytics' ? '#ffffff' : 'var(--text-secondary)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            boxShadow: adminTab === 'analytics' ? '0 2px 10px rgba(2, 132, 199, 0.3)' : 'none',
+          }}
+        >
+          <PieChart size={16} />
+          <span>Sales & Customer Analytics</span>
+          <span
+            style={{
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              padding: '0.1rem 0.4rem',
+              borderRadius: 'var(--radius-full)',
+              background: adminTab === 'analytics' ? 'rgba(255,255,255,0.2)' : 'rgba(56, 189, 248, 0.15)',
+              color: adminTab === 'analytics' ? '#ffffff' : '#38bdf8',
+            }}
+          >
+            Swing 2.0
+          </span>
+        </button>
+      </div>
+
+      {adminTab === 'analytics' ? (
+        <AdminAnalyticsView />
+      ) : (
+        <>
+          {/* Alert Notification */}
+          {feedbackMsg && (
+            <div
+              style={{
+                padding: '0.85rem 1.25rem',
+                borderRadius: 'var(--radius-md)',
+                marginBottom: '1.5rem',
+                background:
+                  feedbackMsg.type === 'success'
+                    ? 'rgba(16, 185, 129, 0.15)'
+                    : 'rgba(244, 63, 94, 0.15)',
+                border: `1px solid ${
+                  feedbackMsg.type === 'success'
+                    ? 'rgba(16, 185, 129, 0.4)'
+                    : 'rgba(244, 63, 94, 0.4)'
+                }`,
+                color: feedbackMsg.type === 'success' ? '#6ee7b7' : '#fda4af',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.6rem',
+                fontSize: '0.875rem',
+              }}
+            >
+              {feedbackMsg.type === 'success' ? <Check size={16} /> : <AlertTriangle size={16} />}
+              <span>{feedbackMsg.text}</span>
+            </div>
+          )}
+
+          {/* KPI Cards Grid */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '1rem',
+              marginBottom: '1.75rem',
+            }}
+          >
         {/* Total Revenue */}
         <div
           style={{
@@ -936,6 +1025,8 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </section>
   );

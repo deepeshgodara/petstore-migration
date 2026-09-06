@@ -1,8 +1,10 @@
 package com.petstore.migration.web;
 
+import com.petstore.migration.model.MongoDiagnosticsResponse;
 import com.petstore.migration.model.ParityDashboardResponse;
 import com.petstore.migration.service.BaselineMigrationService;
 import com.petstore.migration.service.BaselineMigrationService.MigrationSummary;
+import com.petstore.migration.service.MongoDiagnosticsService;
 import com.petstore.migration.service.ParityDashboardService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * REST controller exposing endpoints for triggering live baseline extraction,
- * inspecting migration status, and monitoring real-time data parity.
+ * inspecting migration status, monitoring real-time data parity, and querying
+ * MongoDB performance telemetry for engineering teams.
  */
 @RestController
 @RequestMapping("/api/v1/migration")
@@ -21,12 +24,15 @@ public class MigrationController {
 
   private final BaselineMigrationService baselineMigrationService;
   private final ParityDashboardService parityDashboardService;
+  private final MongoDiagnosticsService mongoDiagnosticsService;
 
   public MigrationController(
       BaselineMigrationService baselineMigrationService,
-      ParityDashboardService parityDashboardService) {
+      ParityDashboardService parityDashboardService,
+      MongoDiagnosticsService mongoDiagnosticsService) {
     this.baselineMigrationService = baselineMigrationService;
     this.parityDashboardService = parityDashboardService;
+    this.mongoDiagnosticsService = mongoDiagnosticsService;
   }
 
   /**
@@ -51,6 +57,18 @@ public class MigrationController {
       @RequestParam(name = "runAudit", defaultValue = "false") boolean runAudit) {
     ParityDashboardResponse dashboard = parityDashboardService.getDashboardMetrics(runAudit);
     return ResponseEntity.ok(dashboard);
+  }
+
+  /**
+   * Provides real-time MongoDB performance metrics, connection telemetry,
+   * cache saturation, and MongoDB Compass integration parameters for engineers.
+   *
+   * @return MongoDiagnosticsResponse
+   */
+  @GetMapping("/mongo-diagnostics")
+  public ResponseEntity<MongoDiagnosticsResponse> getMongoDiagnostics() {
+    MongoDiagnosticsResponse diagnostics = mongoDiagnosticsService.getDiagnostics();
+    return ResponseEntity.ok(diagnostics);
   }
 
   /**

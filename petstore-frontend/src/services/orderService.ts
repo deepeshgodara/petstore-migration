@@ -1,4 +1,4 @@
-import { CreateOrderRequest, OrderDocument, OrderStatus, OrderSummaryResponse } from '../types/order';
+import { AdminAnalyticsResponse, CreateOrderRequest, OrderDocument, OrderStatus, OrderSummaryResponse } from '../types/order';
 
 /**
  * Service providing typed HTTP methods for the Pet Store Order API.
@@ -83,6 +83,22 @@ class OrderApiService {
     const response = await fetch(`${this.baseUrl}/admin/summary`);
     if (!response.ok) {
       throw new Error(`Failed to load admin summary: ${response.status} ${response.statusText}`);
+    }
+    return response.json();
+  }
+
+  /**
+   * Retrieves administrative category sales and customer cohort analytics.
+   */
+  async getAdminAnalytics(startDate?: string, endDate?: string): Promise<AdminAnalyticsResponse> {
+    const params = new URLSearchParams();
+    if (startDate) params.set('startDate', startDate);
+    if (endDate) params.set('endDate', endDate);
+
+    const query = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(`${this.baseUrl}/admin/analytics${query}`);
+    if (!response.ok) {
+      throw new Error(`Failed to load admin analytics: ${response.status} ${response.statusText}`);
     }
     return response.json();
   }

@@ -8,12 +8,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.petstore.order.document.LineItemDocument;
 import com.petstore.order.document.OrderDocument;
 import com.petstore.order.document.OrderStatus;
 import com.petstore.order.kafka.DualWritePublisher;
 import com.petstore.order.kafka.OrderEventProducer;
 import com.petstore.order.repository.OrderRepository;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -121,5 +123,55 @@ class OrderServiceTest {
 
     List<OrderDocument> result = orderService.getOrdersByStatus(OrderStatus.PENDING);
     assertThat(result).hasSize(1);
+  }
+
+  @Test
+  @DisplayName("Should generate comprehensive admin analytics with category sales and customer cohorts")
+  void shouldGenerateAdminAnalytics() {
+    OrderDocument o1 = new OrderDocument();
+    o1.setId("ORD-1");
+    o1.setUserId("customerA");
+    o1.setOrderDate(Instant.now());
+    o1.setStatus(OrderStatus.APPROVED);
+    o1.setTotalPrice(BigDecimal.valueOf(100.00));
+    LineItemDocument li1 = new LineItemDocument(1, "EST-1", "FI-SW-01", "FISH", 2,
+        BigDecimal.valueOf(50.00), BigDecimal.valueOf(100.00));
+    o1.setLineItems(List.of(li1));
+
+    OrderDocument o2 = new OrderDocument();
+    o2.setId("ORD-2");
+    o2.setUserId("customerA"); // returning customer!
+    o2.setOrderDate(Instant.now());
+    o2.setStatus(OrderStatus.COMPLETED);
+    o2.setTotalPrice(BigDecimal.valueOf(50.00));
+    LineItemDocument li2 = new LineItemDocument(1, "EST-6", "K9-BD-01", "DOGS", 1,
+        BigDecimal.valueOf(50.00), BigDecimal.valueOf(50.00));
+    o2.setLineItems(List.of(li2));
+
+    OrderDocument o3 = new OrderDocument();
+    o3.setId("ORD-3");
+    o3.setUserId("customerB"); // unique customer
+    o3.setOrderDate(Instant.now());
+    o3.setStatus(OrderStatus.PENDING);
+    o3.setTotalPrice(BigDecimal.valueOf(25.00));
+
+    when(orderRepository.findAll()).thenReturn(List.of(o1, o2, o3));
+
+    com.petstore.order.dto.AdminAnalyticsResponse analytics = orderService.getAdminAnalytics(null, null);
+
+    assertThat(analytics.totalOrders()).isEqualTo(3);
+    assertThat(analytics.totalRevenue()).isEqualByComparingTo("175.00");
+    assertThat(analytics.uniqueCustomers()).isEqualTo(2);
+    assertThat(analytics.returningCustomers()).isEqualTo(1);
+    assertThat(analytics.repeatCustomerRate()).isEqualTo(50.0);
+    assertThat(analytics.salesByCategory()).isNotEmpty();
+
+    // Check FISH category was computed
+    var fishMetric = analytics.salesByCategory().stream()
+        .filter(c -> "FISH".equalsIgnoreCase(c.categoryId()))
+        .findFirst();
+    assertThat(fishMetric).isPresent();
+    assertThat(fishMetric.get().totalRevenue()).isEqualByComparingTo("100.00");
+    assertThat(fishMetric.get().unitsSold()).isEqualTo(2);
   }
 }

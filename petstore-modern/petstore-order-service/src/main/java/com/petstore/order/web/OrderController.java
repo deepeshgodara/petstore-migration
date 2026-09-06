@@ -2,11 +2,13 @@ package com.petstore.order.web;
 
 import com.petstore.order.document.OrderDocument;
 import com.petstore.order.document.OrderStatus;
+import com.petstore.order.dto.AdminAnalyticsResponse;
 import com.petstore.order.dto.CreateOrderRequest;
 import com.petstore.order.dto.OrderSummaryResponse;
 import com.petstore.order.dto.UpdateOrderStatusRequest;
 import com.petstore.order.service.OrderService;
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
 import org.springframework.http.ResponseEntity;
@@ -110,5 +112,37 @@ public class OrderController {
   public ResponseEntity<OrderSummaryResponse> getAdminSummary() {
     OrderSummaryResponse summary = orderService.getOrderSummary();
     return ResponseEntity.ok(summary);
+  }
+
+  /**
+   * Analytics endpoint providing aggregated sales by category, customer repeat rates,
+   * average order value, and daily trends for the modern administrator dashboard.
+   *
+   * @param startDate optional start date filter (ISO-8601 string)
+   * @param endDate optional end date filter (ISO-8601 string)
+   * @return AdminAnalyticsResponse
+   */
+  @GetMapping("/admin/analytics")
+  public ResponseEntity<AdminAnalyticsResponse> getAdminAnalytics(
+      @RequestParam(name = "startDate", required = false) String startDate,
+      @RequestParam(name = "endDate", required = false) String endDate) {
+    Instant start = null;
+    Instant end = null;
+    if (startDate != null && !startDate.isBlank()) {
+      try {
+        start = Instant.parse(startDate);
+      } catch (Exception ignored) {
+        // fallback
+      }
+    }
+    if (endDate != null && !endDate.isBlank()) {
+      try {
+        end = Instant.parse(endDate);
+      } catch (Exception ignored) {
+        // fallback
+      }
+    }
+    AdminAnalyticsResponse analytics = orderService.getAdminAnalytics(start, end);
+    return ResponseEntity.ok(analytics);
   }
 }

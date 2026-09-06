@@ -43,3 +43,43 @@ export interface MigrationSummary {
   ordersMigrated: number;
   durationMs: number;
 }
+
+export interface MongoDiagnosticsResponse {
+  status: string;
+  version: string;
+  uptimeSeconds: number;
+  replicaSetName: string;
+  isPrimary: boolean;
+  connections: {
+    current?: number;
+    available?: number;
+    active?: number;
+    totalCreated?: number;
+  };
+  opcounters: {
+    insert?: number;
+    query?: number;
+    update?: number;
+    delete?: number;
+    command?: number;
+  };
+  memory: {
+    residentMb?: number;
+    virtualMb?: number;
+  };
+  wiredTigerCache: {
+    bytesInCache?: number;
+    dirtyBytes?: number;
+    maxBytes?: number;
+  };
+  databaseStats: {
+    collections?: number;
+    objects?: number;
+    dataSize?: number;
+    storageSize?: number;
+    indexSize?: number;
+  };
+  collectionStats: Record<string, any>;
+  compassConnectionUri: string;
+}
+

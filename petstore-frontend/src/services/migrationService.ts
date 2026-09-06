@@ -1,4 +1,4 @@
-import { MigrationSummary, ParityDashboardResponse } from '../types/migration';
+import { MigrationSummary, MongoDiagnosticsResponse, ParityDashboardResponse } from '../types/migration';
 
 /**
  * Service providing typed HTTP methods for the Pet Store Migration & Parity API.
@@ -27,6 +27,17 @@ class MigrationApiService {
     });
     if (!response.ok) {
       throw new Error(`Baseline extraction failed: ${response.status} ${response.statusText}`);
+    }
+    return response.json();
+  }
+
+  /**
+   * Retrieves real-time MongoDB engine telemetry, cache metrics, and Compass connection parameters.
+   */
+  async getMongoDiagnostics(): Promise<MongoDiagnosticsResponse> {
+    const response = await fetch(`${this.baseUrl}/mongo-diagnostics`);
+    if (!response.ok) {
+      throw new Error(`Failed to load MongoDB diagnostics: ${response.status} ${response.statusText}`);
     }
     return response.json();
   }

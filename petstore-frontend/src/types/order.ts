@@ -65,3 +65,33 @@ export interface OrderSummaryResponse {
   totalRevenue: number;
   statusBreakdown: Record<string, number>;
 }
+
+export interface CategorySalesMetric {
+  categoryId: string;
+  categoryName: string;
+  totalRevenue: number;
+  unitsSold: number;
+  orderCount: number;
+  percentageShare: number;
+}
+
+export interface DailySalesMetric {
+  date: string;
+  revenue: number;
+  orderCount: number;
+}
+
+export interface AdminAnalyticsResponse {
+  totalOrders: number;
+  totalRevenue: number;
+  uniqueCustomers: number;
+  returningCustomers: number;
+  repeatCustomerRate: number;
+  averageOrderValue: number;
+  salesByCategory: CategorySalesMetric[];
+  salesOverTime: DailySalesMetric[];
+  statusBreakdown: Record<string, number>;
+  startDate: string | null;
+  endDate: string | null;
+}
+

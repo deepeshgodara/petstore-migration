@@ -22,9 +22,12 @@ public class OrderDlqConsumer {
    */
   @KafkaListener(
       topics = "${migration.dualwrite.dlq-topic:petstore.orders.dlq}",
-      groupId = "petstore-dlq-monitor-group"
+      groupId = "petstore-dlq-monitor-group",
+      properties = {
+          "value.deserializer=org.apache.kafka.common.serialization.StringDeserializer"
+      }
   )
-  public void onDlqMessage(ConsumerRecord<String, Object> record) {
+  public void onDlqMessage(ConsumerRecord<String, String> record) {
     log.error("CRITICAL ALERT: Message isolated in Dead-Letter Queue! Topic: {}, Partition: {}, Offset: {}, Key: {}, Payload: {}",
         record.topic(),
         record.partition(),

@@ -13,7 +13,7 @@ class OrderDlqConsumerTest {
   @DisplayName("Should consume and process message from DLQ")
   void shouldProcessDlqMessage() {
     OrderDlqConsumer dlqConsumer = new OrderDlqConsumer();
-    ConsumerRecord<String, Object> record = new ConsumerRecord<>(
+    ConsumerRecord<String, String> record = new ConsumerRecord<>(
         "petstore.orders.dlq", 0, 10L, "ORD-CORRUPT", "{bad-payload}");
 
     // Verify it processes without throwing exception
