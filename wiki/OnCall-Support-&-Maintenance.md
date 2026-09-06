@@ -15,13 +15,12 @@ This playbook provides actionable, step-by-step operational instructions for on-
   ```
 - **Restart Procedure**:
   ```bash
-  # 1. Kill stale process if hanging
-  kill -9 $(lsof -t -i:8081) 2>/dev/null || true
+  # Option A: Container / Cloud Deployment (Docker Compose / Kubernetes)
+  docker compose -f docker/docker-compose.yml restart catalog-service
 
-  # 2. Relaunch service from petstore-modern/
-  export JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home"
-  cd /Users/deepeshgodara/Documents/petstore1.3.1_02/petstore-modern
-  mvn -pl petstore-catalog-service spring-boot:run
+  # Option B: Local CLI Execution (from repository root)
+  kill -9 $(lsof -t -i:8081) 2>/dev/null || true
+  cd petstore-modern && mvn -pl petstore-catalog-service spring-boot:run
   ```
 - **Verification**:
   ```bash
@@ -39,10 +38,12 @@ This playbook provides actionable, step-by-step operational instructions for on-
   ```
 - **Restart Procedure**:
   ```bash
+  # Option A: Container / Cloud Deployment (Docker Compose / Kubernetes)
+  docker compose -f docker/docker-compose.yml restart order-service
+
+  # Option B: Local CLI Execution (from repository root)
   kill -9 $(lsof -t -i:8082) 2>/dev/null || true
-  export JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home"
-  cd /Users/deepeshgodara/Documents/petstore1.3.1_02/petstore-modern
-  mvn -pl petstore-order-service spring-boot:run
+  cd petstore-modern && mvn -pl petstore-order-service spring-boot:run
   ```
 - **Verification**:
   ```bash
@@ -60,10 +61,12 @@ This playbook provides actionable, step-by-step operational instructions for on-
   ```
 - **Restart Procedure**:
   ```bash
+  # Option A: Container / Cloud Deployment (Docker Compose / Kubernetes)
+  docker compose -f docker/docker-compose.yml restart migration-service
+
+  # Option B: Local CLI Execution (from repository root)
   kill -9 $(lsof -t -i:8085) 2>/dev/null || true
-  export JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home"
-  cd /Users/deepeshgodara/Documents/petstore1.3.1_02/petstore-modern
-  mvn -pl petstore-migration-service spring-boot:run
+  cd petstore-modern && mvn -pl petstore-migration-service spring-boot:run
   ```
 - **Verification**:
   ```bash
@@ -76,10 +79,12 @@ This playbook provides actionable, step-by-step operational instructions for on-
 - **Symptoms**: Browser cannot connect to `http://localhost:3000`.
 - **Restart Procedure**:
   ```bash
+  # Option A: Container / Cloud Deployment (Docker Compose / Kubernetes)
+  docker compose -f docker/docker-compose.yml restart frontend
+
+  # Option B: Local CLI Execution (from repository root)
   kill -9 $(lsof -t -i:3000) 2>/dev/null || true
-  cd /Users/deepeshgodara/Documents/petstore1.3.1_02/petstore-frontend
-  export PATH="/Users/deepeshgodara/.gemini/antigravity-ide/bin:$PATH"
-  npm run dev
+  cd petstore-frontend && npm run dev
   ```
 
 ---

@@ -6,7 +6,7 @@ import http.cookiejar
 import re
 
 BASE_URL = "http://localhost:8000"
-OUTPUT_DIR = "/Users/deepeshgodara/Documents/petstore1.3.1_02/legacy_reference"
+OUTPUT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "legacy_reference"))
 
 class SmartRedirectHandler(urllib.request.HTTPRedirectHandler):
     def http_error_302(self, req, fp, code, msg, headers):

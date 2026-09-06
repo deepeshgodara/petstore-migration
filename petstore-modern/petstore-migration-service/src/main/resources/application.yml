@@ -26,7 +26,7 @@ spring:
 
 legacy:
   datasource:
-    url: jdbc:hsqldb:file:${LEGACY_DB_DIR:/Users/deepeshgodara/Documents/petstore1.3.1_02/docker/data}/petstoredb;readonly=true;shutdown=false
+    url: jdbc:hsqldb:file:${LEGACY_DB_DIR:../docker/data}/petstoredb;readonly=true;shutdown=false
     username: sa
     password: ""
     driver-class-name: org.hsqldb.jdbc.JDBCDriver

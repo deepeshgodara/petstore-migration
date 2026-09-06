@@ -9,7 +9,7 @@ public class LegacyDbQuery {
   public static void main(String[] args) {
     String dbPath = args.length > 0 && !args[0].isBlank()
         ? args[0]
-        : "/Users/deepeshgodara/Documents/petstore1.3.1_02/docker/data/petstoredb";
+        : System.getProperty("user.dir") + "/docker/data/petstoredb";
 
     String query = args.length > 1 && !args[1].isBlank()
         ? args[1]

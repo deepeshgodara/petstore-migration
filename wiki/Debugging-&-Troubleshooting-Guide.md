@@ -33,13 +33,13 @@ The repository includes ready-to-run diagnostic scripts in `scripts/`:
 
 | Script | Purpose | When to Run |
 | :--- | :--- | :--- |
-| [`scripts/run_all_verifications.sh`](file:///Users/deepeshgodara/Documents/petstore1.3.1_02/scripts/run_all_verifications.sh) | Master test runner executing all 4 playback suites | Pre-deployment, CI/CD, post-incident validation |
-| [`scripts/verify_e2e_checkout.sh`](file:///Users/deepeshgodara/Documents/petstore1.3.1_02/scripts/verify_e2e_checkout.sh) | Validates POST /api/v1/orders, MongoDB persistence, and parity | Triage checkout issues |
-| [`scripts/verify_admin_approval.sh`](file:///Users/deepeshgodara/Documents/petstore1.3.1_02/scripts/verify_admin_approval.sh) | Tests PUT /orders/{id}/status, Kafka events, and KPI updates | Triage Admin approval queue |
-| [`scripts/verify_supplier_inventory.sh`](file:///Users/deepeshgodara/Documents/petstore1.3.1_02/scripts/verify_supplier_inventory.sh) | Tests GET /items, PUT stock updates, and storefront reflection | Triage Supplier inventory |
-| [`scripts/chaos_mongo_failure_test.sh`](file:///Users/deepeshgodara/Documents/petstore1.3.1_02/scripts/chaos_mongo_failure_test.sh) | Simulates MongoDB pause, verifies legacy uptime & DLQ recovery | Chaos engineering, resilience audits |
-| [`scripts/query_legacy_db.sh`](file:///Users/deepeshgodara/Documents/petstore1.3.1_02/scripts/query_legacy_db.sh) | Direct JDBC query against legacy HSQLDB in container | Verify legacy table contents |
-| [`scripts/mongo_compass_connect.sh`](file:///Users/deepeshgodara/Documents/petstore1.3.1_02/scripts/mongo_compass_connect.sh) | Displays Compass connection parameters and launches GUI | Database administration |
+| `scripts/run_all_verifications.sh` | Master test runner executing all 4 playback suites | Pre-deployment, CI/CD, post-incident validation |
+| `scripts/verify_e2e_checkout.sh` | Validates POST /api/v1/orders, MongoDB persistence, and parity | Triage checkout issues |
+| `scripts/verify_admin_approval.sh` | Tests PUT /orders/{id}/status, Kafka events, and KPI updates | Triage Admin approval queue |
+| `scripts/verify_supplier_inventory.sh` | Tests GET /items, PUT stock updates, and storefront reflection | Triage Supplier inventory |
+| `scripts/chaos_mongo_failure_test.sh` | Simulates MongoDB pause, verifies legacy uptime & DLQ recovery | Chaos engineering, resilience audits |
+| `scripts/query_legacy_db.sh` | Direct JDBC query against legacy HSQLDB in container | Verify legacy table contents |
+| `scripts/mongo_compass_connect.sh` | Displays Compass connection parameters and launches GUI | Database administration |
 
 ---
 
