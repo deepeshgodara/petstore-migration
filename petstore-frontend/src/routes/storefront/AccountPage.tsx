@@ -1,24 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../auth';
-import { OrderDocument } from '../../types/order';
+import { OrderDocument, OrderLineItem } from '../../types/order';
 import { orderService } from '../../services/orderService';
+import { supplierService } from '../../services/supplierService';
+import { Item } from '../../types/catalog';
 import { User, Package, Calendar, DollarSign, Clock, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const AccountPage: React.FC = () => {
   const { user } = useAuth();
   const [orders, setOrders] = useState<OrderDocument[]>([]);
+  const [catalogMap, setCatalogMap] = useState<Record<string, Item>>({});
   const [loading, setLoading] = useState<boolean>(!!user);
 
   useEffect(() => {
     let isMounted = true;
     if (!user) return;
 
-    orderService
-      .getOrders(undefined, user.username)
-      .then((data) => {
+    Promise.all([
+      orderService.getOrders(undefined, user.username),
+      supplierService.getAllItems('en_US').catch(() => [] as Item[]),
+    ])
+      .then(([data, itemsData]) => {
         if (isMounted) {
           setOrders(data);
+          if (itemsData && itemsData.length > 0) {
+            const map: Record<string, Item> = {};
+            itemsData.forEach((it) => {
+              map[it.itemId] = it;
+            });
+            setCatalogMap(map);
+          }
           setLoading(false);
         }
       })
@@ -33,6 +45,19 @@ export const AccountPage: React.FC = () => {
       isMounted = false;
     };
   }, [user]);
+
+  const resolveLineItemInfo = (li: OrderLineItem) => {
+    const catalogItem = catalogMap[li.itemId];
+    const productName = li.productName || catalogItem?.productName || li.productId;
+    const attribute = li.itemAttribute || catalogItem?.attribute || '';
+    const rawImage = li.image || catalogItem?.image || '';
+    const imageSrc = rawImage
+      ? rawImage.startsWith('/')
+        ? rawImage
+        : `/images/${rawImage}`
+      : '/images/banner_logo.gif';
+    return { productName, attribute, imageSrc };
+  };
 
   if (!user) {
     return (
@@ -209,26 +234,56 @@ export const AccountPage: React.FC = () => {
                 </div>
 
                 {/* Line Items List */}
-                <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-sm)', padding: '0.75rem', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-sm)', padding: '0.75rem', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {order.lineItems && order.lineItems.length > 0 ? (
-                    order.lineItems.map((li, idx) => (
-                      <div
-                        key={idx}
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          fontSize: '0.825rem',
-                          padding: '0.25rem 0',
-                        }}
-                      >
-                        <span style={{ color: 'var(--text-secondary)' }}>
-                          • {li.itemId} ({li.productId}) × {li.quantity}
-                        </span>
-                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                          ${Number(li.totalCost).toFixed(2)}
-                        </span>
-                      </div>
-                    ))
+                    order.lineItems.map((li, idx) => {
+                      const itemInfo = resolveLineItemInfo(li);
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            fontSize: '0.825rem',
+                            padding: '0.35rem 0',
+                            borderBottom: idx === order.lineItems.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.04)',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                            <img
+                              src={itemInfo.imageSrc}
+                              alt={itemInfo.productName}
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                objectFit: 'contain',
+                                borderRadius: 'var(--radius-xs)',
+                                background: 'rgba(15, 23, 42, 0.7)',
+                                border: '1px solid var(--border-subtle)',
+                                padding: '2px',
+                              }}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = '/images/banner_logo.gif';
+                              }}
+                            />
+                            <div>
+                              <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                                {itemInfo.productName}
+                              </div>
+                              <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
+                                <span style={{ fontFamily: 'monospace', color: 'var(--accent-cyan)' }}>{li.itemId}</span>
+                                {itemInfo.attribute ? ` • ${itemInfo.attribute}` : ''}
+                                {` • Qty: ${li.quantity}`}
+                              </div>
+                            </div>
+                          </div>
+                          <span style={{ fontWeight: 700, color: 'var(--accent-emerald)' }}>
+                            ${Number(li.totalCost).toFixed(2)}
+                          </span>
+                        </div>
+                      );
+                    })
                   ) : (
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                       Migrated baseline transaction

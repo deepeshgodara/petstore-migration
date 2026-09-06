@@ -104,6 +104,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       quantity: ci.quantity,
       unitPrice: Number(ci.item.listPrice),
       totalCost: Number(ci.item.listPrice) * ci.quantity,
+      productName: ci.product.names?.[locale] || ci.product.name,
+      itemAttribute: ci.item.attributes?.[locale] || ci.item.attribute,
+      image: ci.item.image || ci.product.image || '',
     }));
 
     const orderPayload: CreateOrderRequest = {

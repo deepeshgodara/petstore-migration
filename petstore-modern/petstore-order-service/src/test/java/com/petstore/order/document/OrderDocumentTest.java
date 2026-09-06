@@ -103,4 +103,26 @@ class OrderDocumentTest {
     assertThat(item1).isEqualTo(item2);
     assertThat(item1).isNotEqualTo(item3);
   }
+
+  @Test
+  @DisplayName("Should store and retrieve product title, item attribute, and image on LineItemDocument")
+  void shouldSupportProductAttributes() {
+    LineItemDocument item = new LineItemDocument(
+        1, "EST-1", "FI-SW-01", "FISH", 2,
+        new BigDecimal("16.50"), new BigDecimal("33.00"),
+        "Large Angelfish", "Spotted", "fish1.jpg"
+    );
+
+    assertThat(item.getProductName()).isEqualTo("Large Angelfish");
+    assertThat(item.getItemAttribute()).isEqualTo("Spotted");
+    assertThat(item.getImage()).isEqualTo("fish1.jpg");
+
+    item.setProductName("Updated Angelfish");
+    item.setItemAttribute("Adult Male");
+    item.setImage("fish2.jpg");
+
+    assertThat(item.getProductName()).isEqualTo("Updated Angelfish");
+    assertThat(item.getItemAttribute()).isEqualTo("Adult Male");
+    assertThat(item.getImage()).isEqualTo("fish2.jpg");
+  }
 }

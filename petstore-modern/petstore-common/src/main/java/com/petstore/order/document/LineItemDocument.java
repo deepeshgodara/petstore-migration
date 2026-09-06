@@ -18,6 +18,9 @@ public class LineItemDocument implements Serializable {
   private int quantity;
   private BigDecimal unitPrice;
   private BigDecimal totalCost;
+  private String productName;
+  private String itemAttribute;
+  private String image;
 
   public LineItemDocument() {}
 
@@ -36,6 +39,23 @@ public class LineItemDocument implements Serializable {
     this.quantity = quantity;
     this.unitPrice = unitPrice;
     this.totalCost = totalCost;
+  }
+
+  public LineItemDocument(
+      int lineNumber,
+      String itemId,
+      String productId,
+      String categoryId,
+      int quantity,
+      BigDecimal unitPrice,
+      BigDecimal totalCost,
+      String productName,
+      String itemAttribute,
+      String image) {
+    this(lineNumber, itemId, productId, categoryId, quantity, unitPrice, totalCost);
+    this.productName = productName;
+    this.itemAttribute = itemAttribute;
+    this.image = image;
   }
 
   public int getLineNumber() {
@@ -92,6 +112,30 @@ public class LineItemDocument implements Serializable {
 
   public void setTotalCost(BigDecimal totalCost) {
     this.totalCost = totalCost;
+  }
+
+  public String getProductName() {
+    return productName;
+  }
+
+  public void setProductName(String productName) {
+    this.productName = productName;
+  }
+
+  public String getItemAttribute() {
+    return itemAttribute;
+  }
+
+  public void setItemAttribute(String itemAttribute) {
+    this.itemAttribute = itemAttribute;
+  }
+
+  public String getImage() {
+    return image;
+  }
+
+  public void setImage(String image) {
+    this.image = image;
   }
 
   @Override

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { OrderDocument, OrderStatus, OrderSummaryResponse } from '../types/order';
+import { OrderDocument, OrderLineItem, OrderStatus, OrderSummaryResponse } from '../types/order';
 import { orderService } from '../services/orderService';
+import { supplierService } from '../services/supplierService';
+import { Item } from '../types/catalog';
 import {
   Check,
   CheckCheck,
@@ -19,6 +21,7 @@ import {
 export const AdminDashboard: React.FC = () => {
   const [orders, setOrders] = useState<OrderDocument[]>([]);
   const [summary, setSummary] = useState<OrderSummaryResponse | null>(null);
+  const [catalogMap, setCatalogMap] = useState<Record<string, Item>>({});
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | 'ALL'>('ALL');
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
@@ -31,11 +34,19 @@ export const AdminDashboard: React.FC = () => {
     Promise.all([
       orderService.getOrders(selectedStatus === 'ALL' ? undefined : selectedStatus),
       orderService.getAdminSummary(),
+      supplierService.getAllItems('en_US').catch(() => [] as Item[]),
     ])
-      .then(([ordersData, summaryData]) => {
+      .then(([ordersData, summaryData, itemsData]) => {
         if (isMounted) {
           setOrders(ordersData);
           setSummary(summaryData);
+          if (itemsData && itemsData.length > 0) {
+            const map: Record<string, Item> = {};
+            itemsData.forEach((it) => {
+              map[it.itemId] = it;
+            });
+            setCatalogMap(map);
+          }
           setLoading(false);
         }
       })
@@ -63,15 +74,41 @@ export const AdminDashboard: React.FC = () => {
     Promise.all([
       orderService.getOrders(selectedStatus === 'ALL' ? undefined : selectedStatus),
       orderService.getAdminSummary(),
+      supplierService.getAllItems('en_US').catch(() => [] as Item[]),
     ])
-      .then(([ordersData, summaryData]) => {
+      .then(([ordersData, summaryData, itemsData]) => {
         setOrders(ordersData);
         setSummary(summaryData);
+        if (itemsData && itemsData.length > 0) {
+          const map: Record<string, Item> = {};
+          itemsData.forEach((it) => {
+            map[it.itemId] = it;
+          });
+          setCatalogMap(map);
+        }
       })
       .catch((err: unknown) => {
         console.error('Failed to refresh admin data', err);
       })
       .finally(() => setLoading(false));
+  };
+
+  const resolveLineItemInfo = (li: OrderLineItem) => {
+    const catalogItem = catalogMap[li.itemId];
+    const productName = li.productName || catalogItem?.productName || li.productId;
+    const attribute = li.itemAttribute || catalogItem?.attribute || '';
+    const rawImage = li.image || catalogItem?.image || '';
+    const imageSrc = rawImage
+      ? rawImage.startsWith('/')
+        ? rawImage
+        : `/images/${rawImage}`
+      : '/images/banner_logo.gif';
+    return {
+      productName,
+      attribute,
+      imageSrc,
+      categoryId: li.categoryId || 'PET',
+    };
   };
 
   const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
@@ -505,8 +542,124 @@ export const AdminDashboard: React.FC = () => {
                         <div style={{ fontWeight: 600 }}>{order.shipping?.name || 'Customer'}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>@{order.userId}</div>
                       </td>
-                      <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>
-                        {order.lineItems?.length || 0} item{(order.lineItems?.length || 0) === 1 ? '' : 's'}
+                      <td style={{ padding: '0.85rem 1rem' }}>
+                        {(!order.lineItems || order.lineItems.length === 0) ? (
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Legacy Order</span>
+                        ) : order.lineItems.length === 1 ? (
+                          (() => {
+                            const singleItem = order.lineItems[0];
+                            const info = resolveLineItemInfo(singleItem);
+                            return (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                                <img
+                                  src={info.imageSrc}
+                                  alt={info.productName}
+                                  style={{
+                                    width: '34px',
+                                    height: '34px',
+                                    objectFit: 'contain',
+                                    borderRadius: 'var(--radius-sm)',
+                                    background: 'rgba(15, 23, 42, 0.7)',
+                                    border: '1px solid var(--border-subtle)',
+                                    padding: '2px',
+                                    flexShrink: 0,
+                                  }}
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = '/images/banner_logo.gif';
+                                  }}
+                                />
+                                <div style={{ minWidth: 0 }}>
+                                  <div
+                                    style={{
+                                      fontWeight: 600,
+                                      fontSize: '0.85rem',
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      maxWidth: '160px',
+                                      color: 'var(--text-primary)',
+                                    }}
+                                    title={info.productName}
+                                  >
+                                    {info.productName}
+                                  </div>
+                                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                    {info.attribute ? `${info.attribute} • ` : ''}Qty: {singleItem.quantity}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()
+                        ) : (
+                          (() => {
+                            const firstInfo = resolveLineItemInfo(order.lineItems[0]);
+                            const totalUnits = order.lineItems.reduce((acc, it) => acc + (it.quantity || 1), 0);
+                            return (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                                  {order.lineItems.slice(0, 3).map((li, i) => {
+                                    const itemInfo = resolveLineItemInfo(li);
+                                    return (
+                                      <img
+                                        key={i}
+                                        src={itemInfo.imageSrc}
+                                        alt={itemInfo.productName}
+                                        style={{
+                                          width: '32px',
+                                          height: '32px',
+                                          objectFit: 'contain',
+                                          borderRadius: 'var(--radius-sm)',
+                                          background: 'rgba(15, 23, 42, 0.9)',
+                                          border: '1.5px solid var(--border-subtle)',
+                                          padding: '2px',
+                                          marginLeft: i > 0 ? '-10px' : '0',
+                                          zIndex: 3 - i,
+                                        }}
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).src = '/images/banner_logo.gif';
+                                        }}
+                                      />
+                                    );
+                                  })}
+                                </div>
+                                <div style={{ minWidth: 0 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                    <span
+                                      style={{
+                                        fontWeight: 600,
+                                        fontSize: '0.825rem',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        maxWidth: '120px',
+                                        color: 'var(--text-primary)',
+                                      }}
+                                      title={firstInfo.productName}
+                                    >
+                                      {firstInfo.productName}
+                                    </span>
+                                    <span
+                                      style={{
+                                        fontSize: '0.65rem',
+                                        padding: '1px 6px',
+                                        borderRadius: 'var(--radius-full)',
+                                        background: 'rgba(99, 102, 241, 0.18)',
+                                        color: '#a5b4fc',
+                                        fontWeight: 700,
+                                        whiteSpace: 'nowrap',
+                                      }}
+                                    >
+                                      +{order.lineItems.length - 1}
+                                    </span>
+                                  </div>
+                                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                    {totalUnits} total units
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()
+                        )}
                       </td>
                       <td style={{ padding: '1rem', fontWeight: 700, color: 'var(--accent-emerald)' }}>
                         ${Number(order.totalPrice || 0).toFixed(2)}
@@ -644,35 +797,127 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Line items table */}
-            <h3 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '0.5rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-              Purchased Line Items
-            </h3>
-            <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+              <h3 style={{ fontSize: '0.85rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
+                Purchased Line Items ({selectedOrder.lineItems?.length || 0})
+              </h3>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                Product details & attributes
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
               {selectedOrder.lineItems && selectedOrder.lineItems.length > 0 ? (
-                selectedOrder.lineItems.map((li, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '0.75rem 1rem',
-                      borderBottom: idx === selectedOrder.lineItems.length - 1 ? 'none' : '1px solid var(--border-subtle)',
-                      fontSize: '0.85rem',
-                    }}
-                  >
-                    <div>
-                      <strong style={{ color: '#a5b4fc' }}>{li.itemId}</strong>
-                      <span style={{ marginLeft: '0.5rem', color: 'var(--text-muted)' }}>({li.productId})</span>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Quantity: {li.quantity} × ${Number(li.unitPrice).toFixed(2)}</div>
+                selectedOrder.lineItems.map((li, idx) => {
+                  const info = resolveLineItemInfo(li);
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '0.85rem 1rem',
+                        gap: '1rem',
+                      }}
+                    >
+                      {/* Left: Product Image & Details */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            width: '52px',
+                            height: '52px',
+                            borderRadius: 'var(--radius-sm)',
+                            background: 'rgba(15, 23, 42, 0.8)',
+                            border: '1px solid var(--border-subtle)',
+                            padding: '3px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <img
+                            src={info.imageSrc}
+                            alt={info.productName}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'contain',
+                              borderRadius: 'var(--radius-xs)',
+                            }}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/images/banner_logo.gif';
+                            }}
+                          />
+                        </div>
+
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.2rem' }}>
+                            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#f8fafc' }}>
+                              {info.productName}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: '0.65rem',
+                                padding: '1px 6px',
+                                borderRadius: '4px',
+                                background: 'rgba(99, 102, 241, 0.15)',
+                                color: '#a5b4fc',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                              }}
+                            >
+                              {info.categoryId}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                            <span style={{ fontFamily: 'monospace', color: 'var(--accent-cyan)', fontWeight: 600 }}>
+                              {li.itemId}
+                            </span>
+                            <span style={{ color: 'var(--text-muted)' }}>•</span>
+                            <span style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>
+                              {li.productId}
+                            </span>
+                            {info.attribute && (
+                              <>
+                                <span style={{ color: 'var(--text-muted)' }}>•</span>
+                                <span
+                                  style={{
+                                    padding: '1px 6px',
+                                    borderRadius: 'var(--radius-full)',
+                                    background: 'rgba(6, 182, 212, 0.12)',
+                                    color: 'var(--accent-cyan)',
+                                    fontWeight: 600,
+                                    fontSize: '0.7rem',
+                                  }}
+                                >
+                                  {info.attribute}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Quantity & Pricing */}
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.15rem' }}>
+                          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{li.quantity}</span> × ${Number(li.unitPrice).toFixed(2)}
+                        </div>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--accent-emerald)' }}>
+                          ${Number(li.totalCost).toFixed(2)}
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ fontWeight: 700, color: 'var(--accent-emerald)' }}>
-                      ${Number(li.totalCost).toFixed(2)}
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
-                <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                <div style={{ padding: '1.25rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
                   No itemized lines recorded for this migrated baseline order.
                 </div>
               )}

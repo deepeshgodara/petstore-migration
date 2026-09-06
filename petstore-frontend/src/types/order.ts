@@ -28,6 +28,9 @@ export interface OrderLineItem {
   quantity: number;
   unitPrice: number;
   totalCost: number;
+  productName?: string;
+  itemAttribute?: string;
+  image?: string;
 }
 
 export interface CreateOrderRequest {
