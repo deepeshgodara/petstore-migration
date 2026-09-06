@@ -41,7 +41,7 @@ class MigrationControllerTest {
   @Test
   @DisplayName("Should trigger baseline extraction and return 200 OK with summary")
   void shouldTriggerBaselineExtraction() {
-    MigrationSummary summary = new MigrationSummary(5, 16, 4, 100L);
+    MigrationSummary summary = new MigrationSummary(5, 16, 4, 4, 100L);
     when(baselineService.executeBaselineMigration()).thenReturn(summary);
 
     ResponseEntity<MigrationSummary> response = controller.triggerBaselineExtraction();
@@ -54,8 +54,8 @@ class MigrationControllerTest {
   void shouldReturnParityDashboard() {
     ParityDashboardResponse dashboard = new ParityDashboardResponse(
         100.0, 4, 4, 0, true, "CUTOVER_READY",
-        new DatabaseCounts(5, 16, 4),
-        new DatabaseCounts(5, 16, 4),
+        new DatabaseCounts(5, 16, 4, 4),
+        new DatabaseCounts(5, 16, 4, 4),
         Collections.emptyList(),
         Instant.now()
     );

@@ -16,12 +16,16 @@ import com.petstore.catalog.document.ProductDocument;
 import com.petstore.migration.model.LegacyCategoryRow;
 import com.petstore.migration.model.LegacyItemRow;
 import com.petstore.migration.model.LegacyProductRow;
+import com.petstore.migration.model.LegacyUserRow;
 import com.petstore.migration.processor.CatalogTransformationProcessor;
+import com.petstore.migration.processor.UserTransformationProcessor;
 import com.petstore.migration.reader.LegacyCatalogCursorReader;
 import com.petstore.migration.reader.LegacyOrderCursorReader;
+import com.petstore.migration.reader.LegacyUserCursorReader;
 import com.petstore.migration.service.BaselineMigrationService.MigrationSummary;
 import com.petstore.order.document.OrderDocument;
 import com.petstore.order.document.OrderStatus;
+import com.petstore.user.document.UserDocument;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +43,9 @@ class BaselineMigrationServiceTest {
 
   private LegacyCatalogCursorReader catalogReader;
   private LegacyOrderCursorReader orderReader;
+  private LegacyUserCursorReader userReader;
   private CatalogTransformationProcessor transformationProcessor;
+  private UserTransformationProcessor userTransformationProcessor;
   private MongoTemplate mongoTemplate;
   private MongoCollection<Document> mockCollection;
   private BaselineMigrationService migrationService;
@@ -49,7 +55,9 @@ class BaselineMigrationServiceTest {
   void setUp() {
     catalogReader = mock(LegacyCatalogCursorReader.class);
     orderReader = mock(LegacyOrderCursorReader.class);
+    userReader = mock(LegacyUserCursorReader.class);
     transformationProcessor = mock(CatalogTransformationProcessor.class);
+    userTransformationProcessor = mock(UserTransformationProcessor.class);
     mongoTemplate = mock(MongoTemplate.class);
     mockCollection = mock(MongoCollection.class);
 
@@ -60,7 +68,9 @@ class BaselineMigrationServiceTest {
     migrationService = new BaselineMigrationService(
         catalogReader,
         orderReader,
+        userReader,
         transformationProcessor,
+        userTransformationProcessor,
         mongoTemplate
     );
   }
@@ -89,18 +99,26 @@ class BaselineMigrationServiceTest {
     );
     when(orderReader.readCompleteOrdersAsDocuments()).thenReturn(orderDocs);
 
-    // 4. Execute
+    // 4. Setup user mocks
+    List<LegacyUserRow> userRows = List.of(new LegacyUserRow("j2ee", "j2ee", "active", "j2ee@sun.com", "John", "Doe", "555-1234", "FISH", "en_US", true, true, null, null, null, null, null, null, null, null, null));
+    List<UserDocument> userDocs = List.of(new UserDocument("j2ee", "j2ee", "j2ee@sun.com", "John", "Doe", "555-1234", "ROLE_CUSTOMER"));
+    when(userReader.readAllUsers()).thenReturn(userRows);
+    when(userTransformationProcessor.transformUsers(userRows)).thenReturn(userDocs);
+
+    // 5. Execute
     MigrationSummary summary = migrationService.executeBaselineMigration();
 
-    // 5. Verify results and bulkWrite invocations
+    // 6. Verify results and bulkWrite invocations
     assertThat(summary.categoriesCount()).isEqualTo(1);
     assertThat(summary.productsCount()).isEqualTo(1);
     assertThat(summary.ordersCount()).isEqualTo(1);
+    assertThat(summary.usersCount()).isEqualTo(1);
     assertThat(summary.executionDurationMs()).isGreaterThanOrEqualTo(0);
 
     verify(mongoTemplate).getCollection("petstore_categories");
     verify(mongoTemplate).getCollection("petstore_products");
     verify(mongoTemplate).getCollection("petstore_orders");
-    verify(mockCollection, times(3)).bulkWrite(anyList());
+    verify(mongoTemplate).getCollection("petstore_users");
+    verify(mockCollection, times(4)).bulkWrite(anyList());
   }
 }

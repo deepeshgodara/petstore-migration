@@ -7,6 +7,7 @@ import com.petstore.migration.model.ParityDashboardResponse;
 import com.petstore.migration.model.ParityDashboardResponse.DatabaseCounts;
 import com.petstore.migration.reader.LegacyCatalogCursorReader;
 import com.petstore.migration.reader.LegacyOrderCursorReader;
+import com.petstore.migration.reader.LegacyUserCursorReader;
 import com.petstore.migration.reconciliation.DiscrepancyLogger;
 import java.time.Instant;
 import org.slf4j.Logger;
@@ -27,6 +28,7 @@ public class ParityDashboardService {
   private final DiscrepancyLogger discrepancyLogger;
   private final LegacyCatalogCursorReader catalogReader;
   private final LegacyOrderCursorReader orderReader;
+  private final LegacyUserCursorReader userReader;
   private final MongoTemplate mongoTemplate;
 
   public ParityDashboardService(
@@ -34,11 +36,13 @@ public class ParityDashboardService {
       DiscrepancyLogger discrepancyLogger,
       LegacyCatalogCursorReader catalogReader,
       LegacyOrderCursorReader orderReader,
+      LegacyUserCursorReader userReader,
       MongoTemplate mongoTemplate) {
     this.metrics = metrics;
     this.discrepancyLogger = discrepancyLogger;
     this.catalogReader = catalogReader;
     this.orderReader = orderReader;
+    this.userReader = userReader;
     this.mongoTemplate = mongoTemplate;
   }
 
@@ -68,13 +72,15 @@ public class ParityDashboardService {
         .count();
 
     long legacyOrders = orderReader.readCompleteOrdersAsDocuments().size();
-    DatabaseCounts legacyCounts = new DatabaseCounts(legacyCategories, legacyProducts, legacyOrders);
+    long legacyUsers = userReader.readAllUsers().size();
+    DatabaseCounts legacyCounts = new DatabaseCounts(legacyCategories, legacyProducts, legacyOrders, legacyUsers);
 
     // 2. Gather database counts from MongoDB collections
     long mongoCategories = getCollectionCount("petstore_categories");
     long mongoProducts = getCollectionCount("petstore_products");
     long mongoOrders = getCollectionCount("petstore_orders");
-    DatabaseCounts mongoCounts = new DatabaseCounts(mongoCategories, mongoProducts, mongoOrders);
+    long mongoUsers = getCollectionCount("petstore_users");
+    DatabaseCounts mongoCounts = new DatabaseCounts(mongoCategories, mongoProducts, mongoOrders, mongoUsers);
 
     // 3. Assemble parity metrics
     long totalComparisons = metrics.getTotalComparisons();
@@ -85,8 +91,9 @@ public class ParityDashboardService {
     boolean cutoverReady = parityPercentage >= 99.99
         && totalComparisons > 0
         && discrepancyLogger.getTotalReportCount() == 0
-        && legacyOrders == mongoOrders
-        && legacyProducts == mongoProducts;
+        && legacyOrders <= mongoOrders
+        && legacyProducts == mongoProducts
+        && legacyUsers <= mongoUsers; // Mongo may have new registrations and modern orders!
 
     String status;
     if (cutoverReady) {

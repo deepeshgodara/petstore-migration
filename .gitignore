@@ -25,6 +25,8 @@ derby.log
 
 # Logs & temp
 *.log
+*.lck
+*.tmp
 tmp/
 temp/
 node_modules/

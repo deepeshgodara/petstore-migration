@@ -9,9 +9,11 @@ import com.mongodb.client.MongoCollection;
 import com.petstore.common.metrics.MigrationParityMetrics;
 import com.petstore.migration.model.LegacyCategoryRow;
 import com.petstore.migration.model.LegacyProductRow;
+import com.petstore.migration.model.LegacyUserRow;
 import com.petstore.migration.model.ParityDashboardResponse;
 import com.petstore.migration.reader.LegacyCatalogCursorReader;
 import com.petstore.migration.reader.LegacyOrderCursorReader;
+import com.petstore.migration.reader.LegacyUserCursorReader;
 import com.petstore.migration.reconciliation.DiscrepancyLogger;
 import com.petstore.order.document.OrderDocument;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -32,6 +34,7 @@ class ParityDashboardServiceTest {
   private DiscrepancyLogger discrepancyLogger;
   private LegacyCatalogCursorReader catalogReader;
   private LegacyOrderCursorReader orderReader;
+  private LegacyUserCursorReader userReader;
   private MongoTemplate mongoTemplate;
   private MongoCollection<Document> mockCollection;
   private ParityDashboardService service;
@@ -43,18 +46,21 @@ class ParityDashboardServiceTest {
     discrepancyLogger = mock(DiscrepancyLogger.class);
     catalogReader = mock(LegacyCatalogCursorReader.class);
     orderReader = mock(LegacyOrderCursorReader.class);
+    userReader = mock(LegacyUserCursorReader.class);
     mongoTemplate = mock(MongoTemplate.class);
     mockCollection = mock(MongoCollection.class);
 
     when(mongoTemplate.getCollection("petstore_categories")).thenReturn(mockCollection);
     when(mongoTemplate.getCollection("petstore_products")).thenReturn(mockCollection);
     when(mongoTemplate.getCollection("petstore_orders")).thenReturn(mockCollection);
+    when(mongoTemplate.getCollection("petstore_users")).thenReturn(mockCollection);
 
     service = new ParityDashboardService(
         metrics,
         discrepancyLogger,
         catalogReader,
         orderReader,
+        userReader,
         mongoTemplate
     );
   }
@@ -70,6 +76,9 @@ class ParityDashboardServiceTest {
     ));
     when(orderReader.readCompleteOrdersAsDocuments()).thenReturn(List.of(
         new OrderDocument("100113", "shopper", null, null, null, null, null, null, null, null)
+    ));
+    when(userReader.readAllUsers()).thenReturn(List.of(
+        new LegacyUserRow("j2ee", "j2ee", "active", "j2ee@sun.com", "John", "Doe", "555-1234", "FISH", "en_US", true, true, null, null, null, null, null, null, null, null, null)
     ));
 
     when(mockCollection.countDocuments()).thenReturn(1L);
@@ -89,6 +98,8 @@ class ParityDashboardServiceTest {
     assertThat(response.status()).isEqualTo("CUTOVER_READY");
     assertThat(response.legacyCounts().orders()).isEqualTo(1L);
     assertThat(response.mongoCounts().orders()).isEqualTo(1L);
+    assertThat(response.legacyCounts().users()).isEqualTo(1L);
+    assertThat(response.mongoCounts().users()).isEqualTo(1L);
   }
 
   @Test
@@ -97,6 +108,7 @@ class ParityDashboardServiceTest {
     when(catalogReader.readAllCategories()).thenReturn(Collections.emptyList());
     when(catalogReader.readAllProducts()).thenReturn(Collections.emptyList());
     when(orderReader.readCompleteOrdersAsDocuments()).thenReturn(Collections.emptyList());
+    when(userReader.readAllUsers()).thenReturn(Collections.emptyList());
     when(mockCollection.countDocuments()).thenReturn(0L);
 
     service.getDashboardMetrics(true);

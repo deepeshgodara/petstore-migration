@@ -7,7 +7,7 @@ This document provides a comprehensive chronological record of everything accomp
 ## Table of Contents
 
 1. [Executive Summary](#executive-summary)
-2. [Complete Chronological Prompt & Resolution Log (Prompts 1 – 63)](#complete-chronological-prompt--resolution-log)
+2. [Complete Chronological Prompt & Resolution Log (Prompts 1 – 65)](#complete-chronological-prompt--resolution-log)
 3. [Master Troubleshooting & Issues Matrix](#master-troubleshooting--issues-matrix)
 4. [Current Baseline Operational State](#current-baseline-operational-state)
 5. [Phase 2 Modernization Architecture Summary](#phase-2-modernization-architecture-summary)
@@ -1142,6 +1142,50 @@ Update the work and prompt history present in the github
 
 ---
 
+### Prompt 64: Authentic Product Imagery & Category Fallback (Change 1)
+
+#### User Prompt:
+```text
+1) for fish parrot's image is used, try to fetch the image from internet for each product.
+Try to fix these two things in separate changes.
+```
+
+#### Problem Analysis & Action Taken:
+- **Action Summary**: Identified that Angelfish and Tiger Shark products were displaying a fallback parrot image (`birds_icon.gif`) due to missing legacy fish assets. Researched and fetched authentic, high-resolution product imagery from the internet for all 16 Pet Store products based on their English titles and descriptions. Implemented strict category-aware fallbacks in `imageUtils.ts`.
+- **Technical Implementation**:
+  - Downloaded authentic images for all 16 products to `petstore-frontend/public/images/products/<productId>.jpg`.
+  - Added compatibility aliases `fish1.jpg` and `fish1.gif`.
+  - Created `petstore-frontend/src/utils/imageUtils.ts` providing `getProductImageUrl` and `getCategoryIcon` with category-specific fallback hierarchies.
+  - Updated `ProductCard.tsx`, `ProductDetailModal.tsx`, `CartDrawer.tsx`, `CategoryNav.tsx`, `SupplierInventoryPage.tsx`, `AdminDashboard.tsx`, and `AccountPage.tsx`.
+  - Verified with `npm run build` and committed separately as `7afd138`.
+
+---
+
+### Prompt 65: User Persistence, Legacy Migration, Registration Flow & Parity Auditing (Change 2)
+
+#### User Prompt:
+```text
+2) how would one add a new user if there is no functionality for creating the user?
+I don't see any topic for users in mongo db how did we even migrated the users? Wasn't there a database storing the users?
+Try to fix these two things in separate changes.
+And check if there are no more such flaws like missing users.
+Ensure the parity for all types of data in legacy db to mongo db. If it is found try to update the migration process accordingly step by step.
+don't name the change as a fix name the change as a task
+```
+
+#### Problem Analysis & Action Taken:
+- **Action Summary**: Investigated the legacy relational schema and found user accounts were distributed across 7 tables (`USER`, `CUSTOMER`, `ACCOUNT`, `PROFILE`, `CONTACTINFO`, `ADDRESS`, `CREDITCARD`). MongoDB lacked a `petstore_users` collection, Kafka had no user topics, and the frontend lacked account creation functionality. As requested, treated and named this change as a **task** rather than a fix.
+- **Technical Implementation**:
+  - **Data Models**: Created `UserDocument.java` (mapped to `@Document(collection = "petstore_users")`), `UserProfileDocument.java`, and `UserDomainEvent.java` in `petstore-common`.
+  - **Kafka Streaming**: Provisioned topics `petstore.users.created` and `petstore.users.dualwrite` in Apache Kafka.
+  - **Legacy Extraction & Transformation**: Built `LegacyUserCursorReader.java` joining all 7 legacy tables, and `UserTransformationProcessor.java` synthesizing normalized relational rows into denormalized `UserDocument` aggregates.
+  - **Baseline Migration & Reconciliation**: Updated `BaselineMigrationService.java` to perform idempotent bulk extraction and upsert of legacy users into MongoDB. Updated `ShadowReadComparator.java` and `ParityDashboardService.java` with complete user parity audits.
+  - **Registration & Auth REST API**: Created `UserRepository.java`, `UserEventProducer.java`, `UserService.java`, and `UserController.java` in `petstore-order-service` with endpoints `POST /api/v1/users/register`, `POST /api/v1/users/login`, `GET /api/v1/users/{username}`.
+  - **Frontend Account Creation**: Updated `petstore-frontend/src/auth/AuthContext.tsx` and `types.ts` with `register()` and async backend authentication. Created `userService.ts` and enhanced `LoginModal.tsx` with a dual-tab interface (**Sign In** and **Create Account**) featuring all profile and address fields.
+  - **Verification & Parity**: Executed baseline migration syncing 4 legacy accounts (`j2ee`, `j2ee-ja`, `j2ee-zh`, `shopper`) with 100% parity. Tested modern registration for `alex_customer`, verifying instantaneous storage in MongoDB and event publishing to `petstore.users.created`.
+
+---
+
 ## Master Troubleshooting & Issues Matrix
 
 | Issue Description | Root Cause | Fix Applied | Result / Verification |
@@ -1164,6 +1208,8 @@ Update the work and prompt history present in the github
 | **Hardcoded User Absolute Paths** | Runbooks and config files contained local user directories (`/Users/...`), breaking cloud portability. | Sanitized all wiki pages, configs, and scripts to use relative paths, container mounts, and environment variables. | Cloud-ready, portable execution across local and staging environments. |
 | **Base Repository Root Clutter** | 37+ scattered files in root path made navigation difficult. | Restructured into `petstore-legacy/`, `petstore-legacy-thin-runner/`, and `petstore-modern/`; added root convenience wrappers. | Clean modular repository structure adhering to monorepo best practices. |
 | **Documentation Duplication in Root** | Architectural design docs existed in both `baseline_design/` and `wiki/`. | Migrated all HLD and LLD content into `wiki/`, authored modern HLD/LLD diagrams, and removed `baseline_design/`. | Single source of truth in GitHub Wiki with zero duplication. |
+| **Fish Products Rendering Parrot Image** | Legacy missing image fallback defaulted to `birds_icon.gif`, causing fish (Angelfish, Tiger Shark) to render a parrot. | Searched the internet by English title and description to fetch authentic HD images for all 16 products; built category-aware fallbacks in `imageUtils.ts`. | All 16 products display authentic HD images matching their species; fish fallbacks remain strictly aquatic. |
+| **Missing User Subsystem & Zero Parity for Users** | MongoDB lacked user collections, Kafka lacked user topics, and frontend lacked user registration functionality. | Migrated legacy users across 7 relational tables into MongoDB `petstore_users`; provisioned Kafka user topics; implemented registration & auth REST APIs in `petstore-order-service`; added dual-tab modal in frontend. | 100% data parity between legacy relational user tables and MongoDB; new users register, persist to Mongo, and stream to Kafka. |
 
 ---
 

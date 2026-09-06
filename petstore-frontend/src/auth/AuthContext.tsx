@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Role, User, DEMO_ACCOUNTS } from './types';
+import { Role, User, DEMO_ACCOUNTS, UserRegistrationPayload } from './types';
 import { AuthContext } from './context';
+import { userService } from '../services/userService';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
@@ -27,10 +28,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
-  const login = (username: string, password?: string): boolean => {
+  const login = async (username: string, password?: string): Promise<boolean> => {
     const trimmedUser = username.trim().toLowerCase();
-    const account = DEMO_ACCOUNTS[trimmedUser];
 
+    // 1. Try modern backend user authentication first
+    try {
+      const remoteUser = await userService.login(trimmedUser, password);
+      if (remoteUser) {
+        setUser(remoteUser);
+        setIsLoginModalOpen(false);
+        return true;
+      }
+    } catch (err) {
+      console.warn('Backend login attempt failed, trying demo presets...', err);
+    }
+
+    // 2. Demo role account fallback
+    const account = DEMO_ACCOUNTS[trimmedUser];
     if (account) {
       if (password && account.passwordHash !== password) {
         return false;
@@ -40,17 +54,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     }
 
-    // Default dynamic user creation as customer
-    const newUser: User = {
-      username: trimmedUser,
-      name: username,
-      email: `${trimmedUser}@example.com`,
-      role: 'ROLE_CUSTOMER',
-      token: `jwt_mock_token_${trimmedUser}`,
-    };
-    setUser(newUser);
-    setIsLoginModalOpen(false);
-    return true;
+    // 3. Dynamic guest customer session fallback
+    if (!password || password === 'password' || password === trimmedUser) {
+      const newUser: User = {
+        username: trimmedUser,
+        name: username,
+        email: `${trimmedUser}@example.com`,
+        role: 'ROLE_CUSTOMER',
+        token: `jwt_mock_token_${trimmedUser}`,
+      };
+      setUser(newUser);
+      setIsLoginModalOpen(false);
+      return true;
+    }
+
+    return false;
+  };
+
+  const register = async (payload: UserRegistrationPayload): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const newUser = await userService.register(payload);
+      setUser(newUser);
+      setIsLoginModalOpen(false);
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Registration failed' };
+    }
   };
 
   const logout = () => {
@@ -81,6 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         isAuthenticated: !!user,
         login,
+        register,
         logout,
         hasRole,
         openLoginModal,

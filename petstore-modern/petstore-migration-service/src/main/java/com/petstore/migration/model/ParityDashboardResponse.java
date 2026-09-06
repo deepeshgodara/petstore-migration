@@ -39,6 +39,7 @@ public record ParityDashboardResponse(
   public record DatabaseCounts(
       long categories,
       long products,
-      long orders
+      long orders,
+      long users
   ) implements Serializable {}
 }

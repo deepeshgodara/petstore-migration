@@ -13,10 +13,30 @@ export interface User {
   token?: string;
 }
 
+export interface UserRegistrationPayload {
+  username: string;
+  password?: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  street1?: string;
+  street2?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+  language?: string;
+  favoriteCategory?: string;
+  bannerOption?: boolean;
+  listOption?: boolean;
+}
+
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (username: string, password?: string) => boolean;
+  login: (username: string, password?: string) => Promise<boolean> | boolean;
+  register: (payload: UserRegistrationPayload) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
   hasRole: (requiredRole: Role) => boolean;
   openLoginModal: (targetRoleHint?: Role) => void;

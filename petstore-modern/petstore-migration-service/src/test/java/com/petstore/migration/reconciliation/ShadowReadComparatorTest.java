@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 import com.petstore.common.metrics.MigrationParityMetrics;
 import com.petstore.migration.reader.LegacyCatalogCursorReader;
 import com.petstore.migration.reader.LegacyOrderCursorReader;
+import com.petstore.migration.reader.LegacyUserCursorReader;
 import com.petstore.order.document.OrderDocument;
 import com.petstore.order.document.OrderStatus;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -25,6 +26,7 @@ class ShadowReadComparatorTest {
 
   private LegacyOrderCursorReader orderReader;
   private LegacyCatalogCursorReader catalogReader;
+  private LegacyUserCursorReader userReader;
   private MongoTemplate mongoTemplate;
   private MigrationParityMetrics metrics;
   private ShadowReadComparator comparator;
@@ -33,10 +35,11 @@ class ShadowReadComparatorTest {
   void setUp() {
     orderReader = mock(LegacyOrderCursorReader.class);
     catalogReader = mock(LegacyCatalogCursorReader.class);
+    userReader = mock(LegacyUserCursorReader.class);
     mongoTemplate = mock(MongoTemplate.class);
     metrics = new MigrationParityMetrics(new SimpleMeterRegistry());
 
-    comparator = new ShadowReadComparator(orderReader, catalogReader, mongoTemplate, metrics);
+    comparator = new ShadowReadComparator(orderReader, catalogReader, userReader, mongoTemplate, metrics);
     ReflectionTestUtils.setField(comparator, "driftToleranceCents", 1);
   }
 

@@ -21,7 +21,7 @@ class MigrationJobRunnerTest {
   void shouldExecuteWhenAutoRunEnabled() {
     BaselineMigrationService service = mock(BaselineMigrationService.class);
     when(service.executeBaselineMigration()).thenReturn(
-        new MigrationSummary(5, 16, 4, 50L)
+        new MigrationSummary(5, 16, 4, 4, 50L)
     );
 
     MigrationJobRunner runner = new MigrationJobRunner(service);

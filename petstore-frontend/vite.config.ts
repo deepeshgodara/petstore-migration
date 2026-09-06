@@ -24,6 +24,10 @@ export default defineConfig({
         target: 'http://localhost:8082',
         changeOrigin: true,
       },
+      '/api/v1/users': {
+        target: 'http://localhost:8082',
+        changeOrigin: true,
+      },
       '/api/v1/migration': {
         target: 'http://localhost:8085',
         changeOrigin: true,

@@ -6,6 +6,7 @@ export interface DatabaseCounts {
   categories: number;
   products: number;
   orders: number;
+  users?: number;
 }
 
 export interface DiscrepancyDetail {
@@ -38,10 +39,16 @@ export interface ParityDashboardResponse {
 }
 
 export interface MigrationSummary {
-  categoriesMigrated: number;
-  productsMigrated: number;
-  ordersMigrated: number;
-  durationMs: number;
+  categoriesCount?: number;
+  productsCount?: number;
+  ordersCount?: number;
+  usersCount?: number;
+  categoriesMigrated?: number;
+  productsMigrated?: number;
+  ordersMigrated?: number;
+  usersMigrated?: number;
+  executionDurationMs?: number;
+  durationMs?: number;
 }
 
 export interface MongoDiagnosticsResponse {

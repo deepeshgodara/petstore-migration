@@ -3,9 +3,12 @@ package com.petstore.migration.reconciliation;
 import com.petstore.catalog.document.ProductDocument;
 import com.petstore.common.metrics.MigrationParityMetrics;
 import com.petstore.migration.model.LegacyProductRow;
+import com.petstore.migration.model.LegacyUserRow;
 import com.petstore.migration.reader.LegacyCatalogCursorReader;
 import com.petstore.migration.reader.LegacyOrderCursorReader;
+import com.petstore.migration.reader.LegacyUserCursorReader;
 import com.petstore.order.document.OrderDocument;
+import com.petstore.user.document.UserDocument;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +31,7 @@ public class ShadowReadComparator {
 
   private final LegacyOrderCursorReader orderReader;
   private final LegacyCatalogCursorReader catalogReader;
+  private final LegacyUserCursorReader userReader;
   private final MongoTemplate mongoTemplate;
   private final MigrationParityMetrics metrics;
 
@@ -37,10 +41,12 @@ public class ShadowReadComparator {
   public ShadowReadComparator(
       LegacyOrderCursorReader orderReader,
       LegacyCatalogCursorReader catalogReader,
+      LegacyUserCursorReader userReader,
       MongoTemplate mongoTemplate,
       MigrationParityMetrics metrics) {
     this.orderReader = orderReader;
     this.catalogReader = catalogReader;
+    this.userReader = userReader;
     this.mongoTemplate = mongoTemplate;
     this.metrics = metrics;
   }
@@ -204,8 +210,65 @@ public class ShadowReadComparator {
    */
   public List<ComparisonResult> compareAllOrders() {
     List<OrderDocument> legacyOrders = orderReader.readCompleteOrdersAsDocuments();
-    return legacyOrders.stream()
+    List<ComparisonResult> results = new ArrayList<>(legacyOrders.stream()
         .map(o -> compareOrder(o.getId()))
-        .toList();
+        .toList());
+
+    // Also include all legacy users in reconciliation audits
+    List<LegacyUserRow> legacyUsers = userReader.readAllUsers();
+    for (LegacyUserRow u : legacyUsers) {
+      results.add(compareUser(u.username()));
+    }
+    return results;
+  }
+
+  /**
+   * Compares a user between the legacy relational customer subsystem and MongoDB.
+   *
+   * @param username the username to audit
+   * @return ComparisonResult detailing match status or discrepancies
+   */
+  public ComparisonResult compareUser(String username) {
+    long startNanos = System.nanoTime();
+    List<DiscrepancyDetail> discrepancies = new ArrayList<>();
+
+    Optional<LegacyUserRow> legacyUserOpt = userReader.readAllUsers()
+        .stream()
+        .filter(u -> username.equalsIgnoreCase(u.username()))
+        .findFirst();
+
+    UserDocument mongoUser = mongoTemplate.findById(username, UserDocument.class, "petstore_users");
+
+    if (legacyUserOpt.isEmpty() && mongoUser == null) {
+      long duration = System.nanoTime() - startNanos;
+      metrics.recordShadowComparison(true, duration);
+      return ComparisonResult.match("USER", username, duration);
+    }
+
+    if (legacyUserOpt.isEmpty()) {
+      // User registered directly in MongoDB
+      long duration = System.nanoTime() - startNanos;
+      metrics.recordShadowComparison(true, duration);
+      return ComparisonResult.match("USER", username, duration);
+    }
+
+    if (mongoUser == null) {
+      discrepancies.add(new DiscrepancyDetail(
+          "existence", "PRESENT", "ABSENT", "MISSING_DOCUMENT", "User in legacy database but missing in MongoDB"));
+    } else {
+      LegacyUserRow legacy = legacyUserOpt.get();
+      if (!Objects.equals(legacy.password(), mongoUser.getPassword())) {
+        discrepancies.add(new DiscrepancyDetail(
+            "password", legacy.password(), mongoUser.getPassword(), "PASSWORD_MISMATCH", "Password hash mismatch"));
+      }
+    }
+
+    long duration = System.nanoTime() - startNanos;
+    boolean match = discrepancies.isEmpty();
+    metrics.recordShadowComparison(match, duration);
+
+    return match
+        ? ComparisonResult.match("USER", username, duration)
+        : ComparisonResult.drift("USER", username, discrepancies, duration);
   }
 }
