@@ -96,3 +96,9 @@ Rather than executing a risky "Big Bang" offline migration, the platform preserv
 1. **Asynchronous Decoupling**: Secondary datastore writes run asynchronously via Kafka. If MongoDB or the legacy database experiences latency or an outage, customer transactions are never blocked.
 2. **Dead-Letter Queue (DLQ)**: If a write fails permanently after retries, it routes to `petstore.orders.dlq` for SRE inspection and replay.
 3. **Idempotency**: All MongoDB writes use deterministic IDs (`_id: orderId`). Replayed dual-write events result in safe idempotent upserts.
+
+---
+
+> [!TIP]
+> **Legacy System Deep Dive**: For an exhaustive architectural breakdown of the 2002 J2EE BluePrints implementation (the 4 `.ear` archives, WAF framework, EJB 2.0 component model, 3NF schema, and order flow), read the [Legacy Pet Store Architecture & Component Deep Dive](Legacy-PetStore-Architecture-&-Components).
+

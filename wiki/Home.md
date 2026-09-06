@@ -11,6 +11,7 @@ This wiki is the comprehensive, centralized knowledge base for architects, engin
 | Chapter | Description | Primary Audience |
 | :--- | :--- | :--- |
 | [**Architecture Overview**](Architecture-Overview) | Deep-dive into bounded contexts, the Dual-Write & Shadow Reconciliation pattern, and document modeling. | Architects, Lead Engineers |
+| [**Legacy Architecture & Components**](Legacy-PetStore-Architecture-&-Components) | In-depth breakdown of the 2002 J2EE BluePrints application: the 4 .ear archives, WAF framework, EJB 2.0 components, 3NF schema, and order flow. | Architects, Maintainers, Engineers |
 | [**Service Catalog**](Service-Catalog) | Detailed service specifications, runtime ports, configurations, REST endpoints, and Kafka topics. | Developers, Integrators |
 | [**On-Call Support & Maintenance**](OnCall-Support-&-Maintenance) | Production runbooks: how to maintain services, restart daemons, handle outages, and recover from failures. | On-Call Engineers, SREs |
 | [**Debugging & Troubleshooting Guide**](Debugging-&-Troubleshooting-Guide) | Triage procedures for data parity drift, Kafka lag, lock contention, and automated diagnostic scripts. | Support Engineers, Developers |
