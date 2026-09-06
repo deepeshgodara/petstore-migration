@@ -228,7 +228,7 @@ The legacy database was modeled in strict **Third Normal Form (3NF)** across mor
 ## 8. Preserving Legacy Compatibility During Migration
 
 To ensure zero risk and non-destructive operation throughout the phased migration:
-1. **Zero Legacy Modifications**: The legacy 2002 source files in `src/`, `build.xml`, and `setup.sh` are **100% frozen and untouched**.
+1. **Zero Legacy Modifications**: The legacy 2002 source files in `petstore-legacy/src/`, `petstore-legacy/build.xml`, and `petstore-legacy/setup.sh` are **100% frozen, isolated, and untouched**.
 2. **Containerized Execution**: The legacy runtime is encapsulated in `docker/legacy-tomee/`, running on port `8000`.
 3. **Dual-Write Synchronization**: New transactions are synchronized to both legacy and modern stores via Kafka-backed dual-write pipelines.
 4. **Instant Rollback**: If an issue occurs, the traffic router can instantly revert traffic to the legacy container (`http://localhost:8000/petstore`) because the legacy database remains continuously synchronized.

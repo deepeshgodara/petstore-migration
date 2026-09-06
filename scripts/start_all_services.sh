@@ -108,18 +108,20 @@ wait_for_http "http://localhost:3000/" "Modern Frontend UI"
 echo -e "\n${BOLD}${GREEN}===================================================================${NC}"
 echo -e "${BOLD}${GREEN}  PET STORE PLATFORM IS UP AND RUNNING!                            ${NC}"
 echo -e "${BOLD}${GREEN}===================================================================${NC}"
-echo -e "  ${BOLD}Modern Storefront:${NC}       ${CYAN}http://localhost:3000/${NC}"
-echo -e "  ${BOLD}Customer Account:${NC}        ${CYAN}http://localhost:3000/account${NC}"
-echo -e "  ${BOLD}Admin Dashboard:${NC}         ${CYAN}http://localhost:3000/admin${NC}"
-echo -e "  ${BOLD}Migration Parity Monitor:${NC} ${CYAN}http://localhost:3000/ops${NC}"
-echo -e "  ${BOLD}Kafka UI Management:${NC}     ${CYAN}http://localhost:8087${NC}"
-echo -e "  ${BOLD}Mongo Express DB Admin:${NC}  ${CYAN}http://localhost:8086${NC}"
-echo -e "  ${BOLD}Legacy Pet Store (TomEE):${NC} ${CYAN}http://localhost:8000/petstore/${NC}"
-echo -e "\n  ${BOLD}Demo Authentication Credentials:${NC}"
-echo -e "    Customer:     ${YELLOW}j2ee${NC} / ${YELLOW}j2ee${NC} (ROLE_CUSTOMER)"
-echo -e "    Admin:        ${YELLOW}admin${NC} / ${YELLOW}admin123${NC} (ROLE_ADMIN)"
-echo -e "    Ops/Engineer: ${YELLOW}engineer${NC} / ${YELLOW}eng123${NC} (ROLE_ENGINEER)"
-echo -e "    Superadmin:   ${YELLOW}root${NC} / ${YELLOW}root123${NC} (ROLE_SUPERADMIN)"
+echo -e "  ${BOLD}Modern Storefront:${NC}       ${CYAN}http://localhost:3000/${NC}
+  ${BOLD}Customer Account:${NC}        ${CYAN}http://localhost:3000/account${NC}
+  ${BOLD}Admin Dashboard:${NC}         ${CYAN}http://localhost:3000/admin${NC}
+  ${BOLD}Supplier Inventory:${NC}       ${CYAN}http://localhost:3000/supplier${NC}
+  ${BOLD}Migration Parity Monitor:${NC} ${CYAN}http://localhost:3000/ops${NC}
+  ${BOLD}Kafka UI Management:${NC}     ${CYAN}http://localhost:8087${NC}
+  ${BOLD}Mongo Express DB Admin:${NC}  ${CYAN}http://localhost:8086${NC}
+  ${BOLD}Legacy Pet Store (TomEE):${NC} ${CYAN}http://localhost:8000/petstore/${NC}
+\n  ${BOLD}Demo Authentication Credentials:${NC}
+    Customer:     ${YELLOW}j2ee${NC} / ${YELLOW}j2ee${NC} (ROLE_CUSTOMER)
+    Admin:        ${YELLOW}admin${NC} / ${YELLOW}admin123${NC} (ROLE_ADMIN)
+    Supplier:     ${YELLOW}supplier${NC} / ${YELLOW}supplier${NC} (ROLE_SUPPLIER)
+    Ops/Engineer: ${YELLOW}engineer${NC} / ${YELLOW}eng123${NC} (ROLE_ENGINEER)
+    Superadmin:   ${YELLOW}root${NC} / ${YELLOW}root123${NC} (ROLE_SUPERADMIN)"
 echo -e "\n  ${BOLD}Verification Playback Scripts:${NC}"
 echo -e "    ${BOLD}./scripts/run_all_verifications.sh${NC}"
 echo -e "${BOLD}${GREEN}===================================================================${NC}\n"

@@ -25,16 +25,28 @@ public class PetStoreServer {
             System.out.println("==================================================================");
 
             File projectRoot = new File(".").getCanonicalFile();
-            File populateXml = new File(projectRoot, "src/apps/petstore/src/docroot/populate/Populate-UTF8.xml");
+            File populateXml = new File(projectRoot, "petstore-legacy/src/apps/petstore/src/docroot/populate/Populate-UTF8.xml");
             if (!populateXml.exists()) {
-                // Try parent dir if running from runner dir
-                populateXml = new File(projectRoot, "../src/apps/petstore/src/docroot/populate/Populate-UTF8.xml");
+                // Try parent dir if running from petstore-legacy-thin-runner dir
+                populateXml = new File(projectRoot, "../petstore-legacy/src/apps/petstore/src/docroot/populate/Populate-UTF8.xml");
                 if (populateXml.exists()) {
                     projectRoot = projectRoot.getParentFile();
+                } else {
+                    // Fallback to older paths if applicable
+                    populateXml = new File(projectRoot, "src/apps/petstore/src/docroot/populate/Populate-UTF8.xml");
+                    if (!populateXml.exists()) {
+                        populateXml = new File(projectRoot, "../src/apps/petstore/src/docroot/populate/Populate-UTF8.xml");
+                        if (populateXml.exists()) {
+                            projectRoot = projectRoot.getParentFile();
+                        }
+                    }
                 }
             }
 
-            imagesDir = new File(projectRoot, "src/apps/petstore/src/docroot/images");
+            imagesDir = new File(projectRoot, "petstore-legacy/src/apps/petstore/src/docroot/images");
+            if (!imagesDir.exists()) {
+                imagesDir = new File(projectRoot, "src/apps/petstore/src/docroot/images");
+            }
 
             System.out.println("Loading Catalog & Seed Data from: " + populateXml.getAbsolutePath());
             PetStoreDatabase.getInstance().initialize(populateXml);

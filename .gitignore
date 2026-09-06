@@ -15,6 +15,7 @@ build/
 dist/
 *.class
 runner/bin/
+petstore-legacy-thin-runner/bin/
 
 # Legacy container & local run caches (Docker downloads and configures its own runtime)
 legacy_container/

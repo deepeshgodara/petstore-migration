@@ -1,4 +1,4 @@
-# Java Pet Store 1.3.1_02 Modernization Platform
+# Java Pet Store 1.3.1_02 Enterprise Modernization Platform
 
 [![Java](https://img.shields.io/badge/Java-21%20LTS-orange.svg?style=flat-square&logo=openjdk)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.x-brightgreen.svg?style=flat-square&logo=springboot)](https://spring.io/projects/spring-boot)
@@ -7,59 +7,69 @@
 [![React](https://img.shields.io/badge/React-18.3-blue.svg?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue.svg?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-5.4-purple.svg?style=flat-square&logo=vite)](https://vitejs.dev/)
+[![GitHub Wiki](https://img.shields.io/badge/Docs-GitHub%20Wiki-blueviolet.svg?style=flat-square&logo=github)](https://github.com/deepeshgodara/petstore-migration/wiki)
 
-An enterprise-grade, non-destructive architectural modernization of the iconic **Sun Microsystems Java Pet Store (v1.3.1_02, circa 2002)** into a high-throughput, event-driven reactive microservices platform.
+An enterprise-grade, non-destructive architectural modernization of the iconic **Sun Microsystems Java Pet Store (v1.3.1_02, circa 2002)** into a high-throughput, event-driven reactive microservices platform powered by **Java 21 LTS**, **Spring Boot 3.3**, **MongoDB 7.0 (rs0)**, **Apache Kafka (KRaft)**, and **React 18 + Vite + TypeScript**.
 
 ---
 
-## Table of Contents
-1. [Executive Summary & Architectural Philosophy](#executive-summary--architectural-philosophy)
+## 📑 Table of Contents
+1. [Architectural Highlights & Guarantees](#architectural-highlights--guarantees)
 2. [Target System Architecture](#target-system-architecture)
-3. [Component Directory & Port Mapping](#component-directory--port-mapping)
-4. [Route-Packaged Architecture & RBAC](#route-packaged-architecture--rbac)
-5. [Prerequisites](#prerequisites)
-6. [Quickstart Guide](#quickstart-guide)
-7. [Verification & Interview Playback Suites](#verification--interview-playback-suites)
-8. [Chaos Engineering & Resiliency Demonstration](#chaos-engineering--resiliency-demonstration)
-9. [Automated Tests & Code Quality Standards](#automated-tests--code-quality-standards)
-10. [Legacy Baseline Preservation Notice](#legacy-baseline-preservation-notice)
+3. [Repository Directory Structure](#repository-directory-structure)
+4. [Service Directory & Runtime Port Mapping](#service-directory--runtime-port-mapping)
+5. [How to Run the Migrated Application](#how-to-run-the-migrated-application)
+   - [Option A: One-Command Orchestrated Startup (Recommended)](#option-a-one-command-orchestrated-startup-recommended)
+   - [Option B: Step-by-Step Manual Startup](#option-b-step-by-step-manual-startup)
+6. [Pre-Configured Demo Credentials & Role Access](#pre-configured-demo-credentials--role-access)
+7. [Key Modern Application Features](#key-modern-application-features)
+8. [How to Run the Legacy Baseline](#how-to-run-the-legacy-baseline)
+   - [Option A: Native Java 21 Simulation Runner](#option-a-native-java-21-simulation-runner)
+   - [Option B: Authentic 2002 Apache TomEE Container](#option-b-authentic-2002-apache-tomee-container)
+   - [Legacy Swing Administration Client](#legacy-swing-administration-client)
+9. [Automated Verification & Playback Suites](#automated-verification--playback-suites)
+10. [Documentation & Knowledge Base](#documentation--knowledge-base)
 
 ---
 
-## Executive Summary & Architectural Philosophy
+## 🎯 Architectural Highlights & Guarantees
 
-The goal of this initiative is to demonstrate an end-to-end migration of a legacy monolithic enterprise application utilizing the **Strangler Fig Application Pattern**, ensuring:
-- **Zero Modifications to Legacy Code**: All original code in `src/`, `build.xml`, and `setup.sh` remains 100% untouched and preserved.
-- **Dual-Write Synchronization**: Live customer write events are asynchronously captured and mirrored to the modern datastore via Kafka.
-- **Fault-Isolated Dead-Letter Queues (DLQ)**: Complete fault decoupling—failures in the secondary datastore never impact primary application availability.
-- **Automated Shadow Reconciliation**: Continuous, non-blocking background audits comparing legacy RDBMS records with modern MongoDB documents to guarantee 100% data parity.
-- **Route-Packaged Modern UI**: A cohesive React 18 + Vite SPA using standard path packages (`/`, `/account`, `/admin`, `/ops`) backed by Role-Based Access Control (RBAC).
+This modernization implements the **Strangler Fig Application Pattern** with enterprise-grade operational guarantees:
+
+- **100% Isolated Legacy Baseline**: The entire original 2002 Sun Microsystems codebase resides untouched in `petstore-legacy/`.
+- **Zero-Downtime Migration**: Legacy and modern systems operate concurrently with continuous synchronization.
+- **Dual-Write Synchronization**: Customer transactions are captured and propagated to secondary storage via Apache Kafka.
+- **Fault-Isolated Dead-Letter Queues (DLQ)**: Downstream secondary database latencies or failures never block customer checkouts or primary operations.
+- **Automated Shadow Reconciliation**: A dedicated background audit engine validates data parity between legacy relational tables and MongoDB document collections.
+- **Route-Packaged Modern UI**: A responsive, accessible React 18 Single-Page Application (SPA) supporting Storefront, Account, Admin, Supplier, and Ops personas.
 
 ---
 
-## Target System Architecture
+## 🏛️ Target System Architecture
 
 ```mermaid
 flowchart TB
-    subgraph Clients["Presentation Layer"]
-        SPA["Modern React 18 SPA (Vite)<br/>Port: 3000"]
-        LEGACY_WEB["Legacy JSP / Servlet UI<br/>Port: 8000 / 8088"]
+    subgraph Clients["Presentation Tier"]
+        SPA["Modern React 18 SPA (Vite + TS)<br/>Port: 3000"]
+        SWING["Legacy Admin Client (Swing GUI)<br/>run_admin_client.sh"]
+        LEGACY_WEB["Legacy J2EE Web Portal (JSP)<br/>Port: 8000 / 8080"]
     end
 
     subgraph Security["Role-Based Access Control (RBAC)"]
         SPA -->|"/"| Store["Storefront Catalog (Public)"]
         SPA -->|"/account"| Cust["Customer Account (ROLE_CUSTOMER)"]
-        SPA -->|"/admin"| Admin["Admin Dashboard (ROLE_ADMIN)"]
-        SPA -->|"/ops"| Ops["Migration Monitor (ROLE_ENGINEER)"]
+        SPA -->|"/admin"| Admin["Admin Console (ROLE_ADMIN)"]
+        SPA -->|"/supplier"| Sup["Supplier Inventory (ROLE_SUPPLIER)"]
+        SPA -->|"/ops"| Ops["Telemetry & Parity (ROLE_ENGINEER)"]
     end
 
-    subgraph ModernServices["Modern Microservices (Java 21 LTS + Spring Boot 3.3)"]
-        CATALOG["petstore-catalog-service<br/>Port: 8081<br/>High-Perf Catalog"]
-        ORDER["petstore-order-service<br/>Port: 8082<br/>Orders & Lifecycle"]
-        MIGRATION["petstore-migration-service<br/>Port: 8085<br/>Dual-Write & Parity Audit"]
+    subgraph ModernBackend["Modern Backend Tier (Spring Boot 3.3 / Java 21 LTS)"]
+        CATALOG["petstore-catalog-service<br/>Port: 8081<br/>Multilingual Catalog & Stock"]
+        ORDER["petstore-order-service<br/>Port: 8082<br/>Checkout & Order Lifecycle"]
+        MIGRATION["petstore-migration-service<br/>Port: 8085<br/>Dual-Write, DLQ & Parity Audit"]
     end
 
-    subgraph Streaming["Event Streaming (Apache Kafka KRaft)"]
+    subgraph Streaming["Event Streaming Bus (Apache Kafka KRaft)"]
         KAFKA[("Kafka Broker<br/>Port: 9092")]
         TOPIC_DW["petstore.orders.dualwrite"]
         TOPIC_APP["petstore.orders.approved"]
@@ -69,83 +79,134 @@ flowchart TB
         KAFKA --- TOPIC_DLQ
     end
 
-    subgraph DataTier["Persistence & Data Stores"]
+    subgraph Persistence["Persistence Tier"]
         MONGO[("MongoDB 7.0 (rs0)<br/>Port: 27017")]
-        LEGACY_DB[("Legacy DB (HSQLDB/Cloudscape)<br/>File: petstoredb")]
+        LEGACY_DB[("Legacy DB (HSQLDB/Cloudscape)<br/>petstoredb.script")]
     end
 
-    subgraph LegacyEngine["Legacy Baseline Container (2002 Authenticity)"]
-        TOMEE["Apache TomEE / J2EE 1.3 Container<br/>petstore-baseline"]
+    subgraph LegacyRuntime["Legacy Engine"]
+        TOMEE["Apache TomEE / J2EE Container<br/>Port: 8000"]
+        THIN_RUNNER["Java 21 Thin Runner<br/>Port: 8080"]
     end
 
-    %% Flows
+    %% Client flows
     Store -->|GET /api/v1/categories| CATALOG
     Cust -->|POST /api/v1/orders| ORDER
     Admin -->|PUT /api/v1/orders/:id/status| ORDER
+    Admin -->|GET /api/v1/orders/admin/summary| ORDER
+    Sup -->|PUT /api/v1/items/:id/inventory| CATALOG
     Ops -->|GET /api/v1/migration/parity| MIGRATION
 
+    %% Backend persistence & streaming
+    CATALOG --> MONGO
     ORDER -->|Persist Document| MONGO
     ORDER -->|Publish Dual-Write| TOPIC_DW
     ORDER -->|Publish Domain Events| TOPIC_APP
 
-    TOPIC_DW -->|Consume & Replicate| MIGRATION
-    MIGRATION -->|Dual-Write Save| MONGO
+    TOPIC_DW -->|Consume & Reconcile| MIGRATION
+    MIGRATION -->|Persist Document| MONGO
     MIGRATION -->|Error Backoff / Fail| TOPIC_DLQ
 
     MIGRATION -.->|Shadow Reconciliation| LEGACY_DB
     MIGRATION -.->|Audit Parity| MONGO
 
     LEGACY_WEB --> TOMEE
+    LEGACY_WEB --> THIN_RUNNER
     TOMEE --> LEGACY_DB
 ```
 
 ---
 
-## Component Directory & Port Mapping
+## 📁 Repository Directory Structure
+
+The repository is cleanly partitioned into modular, purpose-driven directories:
+
+```
+petstore1.3.1_02/
+├── petstore-legacy/              # [Untouched] 2002 Sun Microsystems J2EE 1.3 baseline
+│   ├── src/                      # Original J2EE Java source files (apps, components, waf)
+│   ├── webservices/              # Original JAX-RPC webservices
+│   ├── docs/                     # Original 2002 architecture specifications & docs
+│   ├── petstore.ear, opc.ear...  # Original enterprise application archives
+│   ├── setup.bat, setup.sh       # Original Cloudscape database scripts
+│   ├── run_admin_client.sh       # Original Swing client launch script
+│   └── COPYRIGHT*, LICENSE       # Original Sun Microsystems licenses
+│
+├── petstore-legacy-thin-runner/  # Standalone Java 21 native simulation runner
+│   ├── src/                      # Lightweight embedded HTTP controller & database models
+│   ├── bin/                      # Compiled bytecode classes
+│   ├── run.sh                    # Direct launch script (starts on port 8080)
+│   └── README.md                 # Thin runner architecture & flow documentation
+│
+├── petstore-modern/              # Cloud-native microservices (Spring Boot 3.3, Java 21 LTS)
+│   ├── petstore-catalog-service/ # Multilingual catalog & inventory REST API (Port 8081)
+│   ├── petstore-order-service/   # Order lifecycle, checkout & dual-write publisher (Port 8082)
+│   ├── petstore-migration-service/# Kafka consumer, DLQ recovery & parity audit (Port 8085)
+│   ├── docker-compose.yml        # Docker compose definition for MongoDB, Kafka, UIs
+│   └── pom.xml                   # Root Maven parent POM managing all microservices
+│
+├── petstore-frontend/            # Modern React 18 + Vite + TypeScript web application
+│   ├── src/
+│   │   ├── components/           # Navbar, CartDrawer, AuthModal, OrderModal
+│   │   ├── pages/                # Storefront, Account, Admin, Supplier, Ops
+│   │   ├── services/             # Axios API clients with Bearer token authentication
+│   │   └── types/                # Strict TypeScript domain interfaces
+│   ├── package.json
+│   └── vite.config.ts            # Vite bundler & reverse proxy configuration
+│
+├── docker/                       # Docker container configuration & startup scripts
+│   ├── Dockerfile                # Ubuntu 20.04 + OpenJDK 8 + TomEE 1.7.5 container image
+│   ├── run_docker.sh             # Build and launch authentic 2002 baseline (Port 8000)
+│   └── entrypoint.sh             # Container lifecycle entrypoint
+│
+├── scripts/                      # Automated verification, chaos, and operational tooling
+│   ├── start_all_services.sh     # One-command startup for Docker, backend & frontend
+│   ├── stop_all_services.sh      # Graceful shutdown script
+│   ├── run_all_verifications.sh  # Master playback test suite executing all verifications
+│   ├── verify_e2e_checkout.sh    # E2E customer checkout & MongoDB persistence verification
+│   ├── verify_admin_approval.sh  # Admin approval workflow & Kafka event verification
+│   ├── verify_supplier_inventory.sh # Supplier stock updates & immediate reflection
+│   ├── chaos_mongo_failure_test.sh # Chaos fault-injection & DLQ isolation verification
+│   ├── mongo_compass_connect.sh  # MongoDB Compass connection utility
+│   └── sync_wiki.sh              # Two-way GitHub Wiki synchronization tool
+│
+├── wiki/                         # Comprehensive 6-chapter technical documentation suite
+│   ├── Home.md
+│   ├── Architecture-Overview.md
+│   ├── Legacy-PetStore-Architecture-&-Components.md
+│   ├── Service-Catalog.md
+│   ├── OnCall-Support-&-Maintenance.md
+│   ├── Debugging-&-Troubleshooting-Guide.md
+│   └── Database-&-MongoDB-Compass-Guide.md
+│
+├── baseline_design/              # High-Level and Low-Level Design (LLD) diagrams
+├── run.sh                        # Convenience runner launching the Java 21 thin runner
+├── run_admin_client.sh           # Convenience wrapper launching the legacy Swing GUI
+└── README.md                     # Master repository documentation (this file)
+```
+
+---
+
+## 🌐 Service Directory & Runtime Port Mapping
 
 | Service / Component | Technology Stack | Port | Purpose |
 | :--- | :--- | :--- | :--- |
-| **`petstore-frontend`** | React 18, Vite, TypeScript, Tailwind | `3000` | Modern Single-Page Application (Storefront, Account, Admin, Ops) |
-| **`petstore-catalog-service`** | Spring Boot 3.3, Java 21, Spring Data Mongo | `8081` | Microsecond catalog queries, multi-lingual pet metadata |
-| **`petstore-order-service`** | Spring Boot 3.3, Java 21, Spring Kafka, Mongo | `8082` | Order placement, state transitions, domain events |
-| **`petstore-migration-service`** | Spring Boot 3.3, Java 21, Spring Batch, JDBC | `8085` | Dual-write consumer, DLQ isolation, shadow parity reconciliation |
-| **`petstore-mongo`** | MongoDB 7.0 Community (Replica Set `rs0`) | `27017` | Modern document store (`petstore_orders`, `categories`, `products`) |
-| **`petstore-kafka`** | Confluent Kafka 7.6.1 (KRaft mode) | `9092` | Event streaming bus (`orders.dualwrite`, `orders.approved`, `orders.dlq`) |
-| **`petstore-kafka-ui`** | Provectus Labs Kafka-UI | `8087` | Web inspection of Kafka topics, partitions, and consumer groups |
-| **`petstore-mongo-express`**| Mongo Express 1.0.2 | `8086` | Web GUI for browsing MongoDB collections and indexes |
-| **`petstore-baseline`** | Apache TomEE, JDK 8/1.3 baseline | `8000` / `8088` | Preserved original 2002 J2EE Pet Store application |
+| **`petstore-frontend`** | React 18, Vite, TypeScript | `3000` | Modern Single-Page Application (Storefront, Account, Admin, Supplier, Ops) |
+| **`petstore-catalog-service`** | Spring Boot 3.3, Java 21 LTS | `8081` | Multilingual catalog queries, inventory levels, pet metadata |
+| **`petstore-order-service`** | Spring Boot 3.3, Java 21 LTS | `8082` | Customer checkout, order approval lifecycle, dual-write Kafka producer |
+| **`petstore-migration-service`**| Spring Boot 3.3, Java 21 LTS | `8085` | Dual-write Kafka consumer, DLQ fault recovery, shadow parity auditor |
+| **`petstore-mongo`** | MongoDB 7.0 Community (rs0) | `27017` | High-throughput document database (`petstore_orders`, `petstore_products`, etc.) |
+| **`petstore-kafka`** | Confluent Kafka 7.6.1 (KRaft) | `9092` | Distributed event streaming bus (`orders.dualwrite`, `orders.approved`, `orders.dlq`) |
+| **`petstore-kafka-ui`** | Provectus Labs Kafka-UI | `8087` | Web inspection of Kafka topics, message offsets, and consumer group lags |
+| **`petstore-mongo-express`**| Mongo Express 1.0.2 | `8086` | Web GUI for browsing MongoDB collections, indexes, and document schemas |
+| **`petstore-baseline` (TomEE)**| Apache TomEE Plus 1.7.5 | `8000` / `8088`| Authentic 2002 J2EE 1.3 container executing original EAR archives |
+| **`petstore-legacy-thin-runner`**| Native Java 21 LTS | `8080` | Zero-dependency standalone simulation runner for the legacy application |
 
 ---
 
-## Route-Packaged Architecture & RBAC
+## 🚀 How to Run the Migrated Application
 
-Rather than maintaining disparate web applications, the platform features a single **Route-Packaged Architecture** managed by `react-router-dom` with strict Role-Based Access Control (RBAC):
-
-| Route Path | View / Module | Required Roles | Description |
-| :--- | :--- | :--- | :--- |
-| `/` | **Storefront Catalog** | *Public* | Multi-lingual pet browsing (EN, JA, ZH), category filtering, 43 authentic GIF pet assets, slide-over cart drawer, instant checkout modal. |
-| `/account` | **Customer Account** | `ROLE_CUSTOMER`, `ROLE_ADMIN`, `ROLE_SUPERADMIN` | Customer profile management, real-time order history, line item inspection, delivery status tracking. |
-| `/admin` | **Admin Dashboard** | `ROLE_ADMIN`, `ROLE_SUPERADMIN` | Modern web replacement for legacy Swing client (`petstoreadmin.ear`). Real-time sales KPIs, pending approval queue, one-click order approval / rejection. |
-| `/supplier` | **Supplier Portal** | `ROLE_SUPPLIER`, `ROLE_ADMIN`, `ROLE_SUPERADMIN` | Modern web replacement for legacy JSP (`supplier.ear`). Real-time inventory tracking, warehouse valuation, stock health progress bars, and one-click stock adjustments. |
-| `/ops` | **Migration Parity Monitor**| `ROLE_ENGINEER`, `ROLE_SUPERADMIN` | Real-time dual-write replication monitor, drift detection, on-demand shadow audit execution. |
-
-### Pre-Configured Demo Credentials
-
-The login modal contains quick-select preset badges for immediate evaluation:
-
-| Identity | Username | Password | Assigned Role | Access Scope |
-| :--- | :--- | :--- | :--- | :--- |
-| **Shopper** | `j2ee` | `j2ee` | `ROLE_CUSTOMER` | Catalog, Cart, `/account` |
-| **Admin** | `admin` | `admin123` | `ROLE_ADMIN` | Catalog, `/account`, `/admin`, `/supplier` |
-| **Supplier** | `supplier` | `supplier` | `ROLE_SUPPLIER` | Catalog, `/supplier` |
-| **Engineer** | `engineer` | `eng123` | `ROLE_ENGINEER` | Catalog, `/ops` |
-| **Super Admin** | `root` | `root123` | `ROLE_SUPERADMIN` | Unrestricted Access across all routes |
-
----
-
-## Prerequisites
-
-Before starting the application, ensure your environment meets the following minimum requirements:
+### Prerequisites
 - **Operating System**: macOS (Apple Silicon / Intel), Linux, or Windows (WSL2)
 - **Java**: OpenJDK 21 LTS or Eclipse Temurin 21 (`java -version`)
 - **Maven**: Apache Maven 3.9+ (`mvn -version`)
@@ -154,18 +215,32 @@ Before starting the application, ensure your environment meets the following min
 
 ---
 
-## Quickstart Guide
+### Option A: One-Command Orchestrated Startup (Recommended)
 
-### Option A: One-Command Startup (Recommended)
-
-To start the entire platform including Docker containers, microservices, and modern frontend in a single step:
+To start the entire modern platform—including Docker containers (MongoDB, Kafka, Kafka-UI, Mongo-Express), all 3 Spring Boot microservices, and the React 18 frontend—execute:
 
 ```bash
 ./scripts/start_all_services.sh
 ```
 
-To gracefully tear down the platform when finished:
+The script verifies Docker readiness, launches backend processes in the background, starts the Vite development server, verifies HTTP endpoint health, and prints the operational dashboard:
 
+```
+===================================================================
+  PET STORE PLATFORM IS UP AND RUNNING!
+===================================================================
+  Modern Storefront:       http://localhost:3000/
+  Customer Account:        http://localhost:3000/account
+  Admin Dashboard:         http://localhost:3000/admin
+  Supplier Inventory:      http://localhost:3000/supplier
+  Migration Parity Monitor: http://localhost:3000/ops
+  Kafka UI Management:     http://localhost:8087
+  Mongo Express DB Admin:  http://localhost:8086
+  Legacy Pet Store (TomEE): http://localhost:8000/petstore/
+===================================================================
+```
+
+To stop all services and containers gracefully:
 ```bash
 ./scripts/stop_all_services.sh
 ```
@@ -174,7 +249,9 @@ To gracefully tear down the platform when finished:
 
 ### Option B: Step-by-Step Manual Startup
 
-#### 1. Start Infrastructure Containers
+If you prefer to start each component individually in dedicated terminal windows:
+
+#### Step 1: Start Infrastructure Containers (Docker Compose)
 ```bash
 cd petstore-modern
 docker compose up -d
@@ -184,115 +261,184 @@ Verify containers are healthy:
 docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 ```
 
-#### 2. Build Modern Backend Services
-```bash
-cd petstore-modern
-mvn clean install -DskipTests
-```
+#### Step 2: Build & Launch Modern Backend Microservices
+Open three terminal windows:
 
-#### 3. Launch Spring Boot Microservices (separate terminals)
 ```bash
-# Terminal 1: Catalog Service
+# Terminal 1: Launch Catalog Service (Port 8081)
+cd petstore-modern
 mvn -pl petstore-catalog-service spring-boot:run
 
-# Terminal 2: Order Service
+# Terminal 2: Launch Order Service (Port 8082)
+cd petstore-modern
 mvn -pl petstore-order-service spring-boot:run
 
-# Terminal 3: Migration & Dual-Write Service
+# Terminal 3: Launch Migration & Dual-Write Service (Port 8085)
+cd petstore-modern
 mvn -pl petstore-migration-service spring-boot:run
 ```
 
-#### 4. Launch Modern React Frontend
+#### Step 3: Launch Modern Frontend
 ```bash
 cd petstore-frontend
 npm install
 npm run dev
 ```
-Open **`http://localhost:3000`** in your browser.
+
+Open your browser to **`http://localhost:3000/`**.
 
 ---
 
-## Verification & Interview Playback Suites
+## 🔐 Pre-Configured Demo Credentials & Role Access
 
-The `scripts/` directory provides standalone, automated verification suites designed for playback during technical interviews or CI/CD pipelines:
+The modern platform uses Role-Based Access Control (RBAC). The login modal includes one-click demo profile badges:
 
-### 1. Master Verification Runner
-Runs all three verification suites sequentially with automated assertion reporting:
+| Identity | Username | Password | Assigned Role | Route Permissions | Description |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Customer** | `j2ee` | `j2ee` | `ROLE_CUSTOMER` | `/`, `/account` | Browse catalog, manage persistent cart, place orders, view personal order history. |
+| **Admin** | `admin` | `admin123` | `ROLE_ADMIN` | `/`, `/account`, `/admin`, `/supplier` | Modern replacement for Swing Admin client. Approve/reject orders, view sales KPI analytics. |
+| **Supplier** | `supplier` | `supplier` | `ROLE_SUPPLIER` | `/`, `/supplier` | Modern replacement for `supplier.ear`. Manage warehouse inventory, edit stock quantities. |
+| **Engineer / Ops** | `engineer` | `eng123` | `ROLE_ENGINEER` | `/`, `/ops` | Telemetry dashboard, dual-write health, trigger shadow parity audits, MongoDB Compass metrics. |
+| **Super Admin** | `root` | `root123` | `ROLE_SUPERADMIN` | *All Routes* | Unrestricted system-wide access across all routes and features. |
+
+---
+
+## ✨ Key Modern Application Features
+
+### 1. Storefront & Multi-Language Cart (`/`)
+- Dynamic pet catalog with category filtering across all 5 pet categories (Fish, Dogs, Reptiles, Cats, Birds) and 28 items.
+- 43 authentic GIF pet assets dynamically loaded and displayed.
+- **Language Switcher**: English (`en_US`), Japanese (`ja_JP`), and Chinese (`zh_CN`). Cart items automatically preserve the language in which they were added to the cart, even when the storefront language changes.
+- Slide-over conversational cart drawer with real-time subtotal calculation and checkout modal.
+
+### 2. Admin Portal & Sales Category Analytics (`/admin`)
+- Complete modern web replacement for the authentic 2002 Java Web Start / Swing desktop client (`AdminApp.jar`).
+- **Pending Orders Queue**: One-click order approval or rejection emitting Kafka events (`petstore.orders.approved`).
+- **Interactive Sales Analytics (Swing 2.0)**:
+  - Date range filtering (7 Days, 30 Days, 90 Days, 1 Year).
+  - Dynamic **SVG Category Breakdown Donut Chart** showing sales volume by pet category.
+  - Dynamic **SVG Category Volume Bar Chart**.
+  - **Cohort Metrics**: Unique customer count, returning customer rate, and average order value.
+
+### 3. Supplier Inventory Management (`/supplier`)
+- Modern web replacement for the legacy JSP supplier portal (`supplier.ear`).
+- Live table of all 28 product SKUs with category, unit cost, list price, and stock levels.
+- Real-time stock status badges (`In Stock`, `Low Stock`, `Out of Stock`) and progress bars.
+- One-click stock updates that write directly to MongoDB (`petstore_products`) and immediately reflect across customer storefront search and item detail views.
+
+### 4. Telemetry & MongoDB Compass Diagnostics (`/ops`)
+- Live Dual-Write replication monitor tracking orders processed, lag, and dead-letter queue (DLQ) state.
+- On-demand **Shadow Reconciliation Audit** comparing relational database records against MongoDB.
+- **Live Database Diagnostics**: MongoDB cluster health, active connections, database size, and collection counts.
+- **MongoDB Compass Integration**: One-click connection string copy (`mongodb://localhost:27017/petstore?replicaSet=rs0`) and command launcher (`./scripts/mongo_compass_connect.sh`).
+
+---
+
+## 🏛️ How to Run the Legacy Baseline
+
+The repository provides two independent options to run the legacy baseline for historical comparison:
+
+### Option A: Native Java 21 Simulation Runner (Fastest, Zero Dependencies)
+
+The `petstore-legacy-thin-runner/` module is a zero-dependency, native Java 21 LTS simulation engine. It runs directly on macOS, Linux, and Windows without Docker or heavy J2EE containers:
+
+```bash
+# Launch from project root:
+./run.sh
+
+# Or directly from the runner directory:
+cd petstore-legacy-thin-runner
+./run.sh
+```
+
+- **Storefront URL**: `http://localhost:8080/petstore/`
+- **Admin URL**: `http://localhost:8080/petstore/admin`
+- **Supplier URL**: `http://localhost:8080/petstore/supplier`
+
+---
+
+### Option B: Authentic 2002 Apache TomEE Container (Full J2EE Container)
+
+To run the authentic 2002 application inside an Apache TomEE Plus container running OpenJDK 8 on port 8000:
+
+```bash
+./docker/run_docker.sh
+```
+
+- **Storefront URL**: `http://localhost:8000/petstore/`
+- **Admin Portal URL**: `http://localhost:8000/admin/AdminRequestProcessor`
+- **Supplier Portal URL**: `http://localhost:8000/supplier/RcvrRequestProcessor`
+- **Credentials**: `j2ee` / `j2ee` (Customer), `jps_admin` / `admin` (Admin), `supplier` / `supplier` (Supplier)
+
+---
+
+### Legacy Swing Administration Client
+
+The legacy Pet Store admin application was originally distributed via Java Web Start (`AdminApp.jar`). To launch the authentic Swing desktop application on your local machine:
+
+```bash
+# Ensure the TomEE container is running on port 8000, then execute:
+./run_admin_client.sh
+```
+
+The script extracts `AdminApp.jar` from `petstore-legacy/petstoreadmin.ear`, authenticates with the container admin portal on port 8000, and opens the native Java Swing desktop window.
+
+---
+
+## 🧪 Automated Verification & Playback Suites
+
+The `scripts/` directory provides standalone, automated verification suites designed for CI/CD pipelines and interview playback:
+
+### Master Verification Runner
+Executes all verification suites sequentially with automated assertion reporting:
 ```bash
 ./scripts/run_all_verifications.sh
 ```
 
-### 2. Task 7.1: End-to-End Checkout & Write Propagation
-Tests customer checkout through the modern REST API, validates document persistence in MongoDB replica set `rs0`, validates REST order retrieval, and verifies shadow reconciliation data parity:
+### Individual Playback Suites
 ```bash
+# 1. E2E Checkout & MongoDB Write Propagation
 ./scripts/verify_e2e_checkout.sh
-```
 
-### 3. Task 7.2: Automated Admin Approval Flow
-Simulates the modern web replacement for `petstoreadmin.ear`: captures baseline KPI metrics, creates a pending order, verifies presence in the admin pending queue, executes one-click approval (`PUT /api/v1/orders/{id}/status`), verifies MongoDB state update, and confirms Kafka domain event emission on `petstore.orders.approved`:
-```bash
+# 2. Modern Admin Approval Workflow & Kafka Event Emission
 ./scripts/verify_admin_approval.sh
-```
 
-### 4. Task 7.3: Chaos Experiment & Resiliency
-Simulates a total secondary datastore outage by pausing the `petstore-mongo` container, verifies that the legacy Pet Store application continues serving traffic with zero interruption (HTTP 200), proves fault-isolated Dead-Letter Queue (DLQ) routing on topic `petstore.orders.dlq`, unpauses MongoDB, and executes post-recovery parity healing:
-```bash
+# 3. Supplier Inventory Updates & Real-Time Stock Sync
+./scripts/verify_supplier_inventory.sh
+
+# 4. Chaos Experiment (Simulate MongoDB Outage, Verify Zero Blast Radius & DLQ Isolation)
 ./scripts/chaos_mongo_failure_test.sh
 ```
 
-### 5. Supplier & Inventory Management Verification
-Simulates the modern web replacement for legacy `supplier.ear`: fetches full inventory catalog (28 SKUs), tests stock level adjustments through `PUT /api/v1/items/{itemId}/inventory`, confirms atomic MongoDB persistence in `petstore_products`, and validates immediate customer-facing REST reflection:
-```bash
-./scripts/verify_supplier_inventory.sh
-```
-
----
-
-## Chaos Engineering & Resiliency Demonstration
-
-A key tenet of the Strangler Fig migration is ensuring that the legacy monolithic application is never placed at risk by the introduction of new components:
-
-```
-[Simulate Secondary Failure]
-       │
-       ▼
-docker pause petstore-mongo
-       │
-       ├─► Legacy Pet Store (Port 8000) ───► HTTP 200 OK (Zero Blast Radius)
-       │
-       └─► Asynchronous Dual-Write ────────► Retries exhausted ──► Routed to petstore.orders.dlq
-       │
-       ▼
-docker unpause petstore-mongo
-       │
-       └─► Shadow Reconciliation Audit ───► GET /api/v1/migration/parity?runAudit=true (100% Healed)
-```
-
----
-
-## Automated Tests & Code Quality Standards
-
-### Running Backend Unit & Integration Tests
+### Running Backend Unit Tests
 ```bash
 cd petstore-modern
-mvn test
+export JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home"
+mvn clean test -pl petstore-catalog-service,petstore-order-service,petstore-migration-service
 ```
-- **32 tests** in `petstore-migration-service` (consumer retries, DLQ recoverer, shadow parity auditor)
-- **26 tests** in `petstore-order-service` (order placement, state transitions, dual-write Kafka publisher)
-- **All tests pass with 0 failures and 0 errors.**
+- **76 unit & integration tests** across all microservices.
+- **100% test pass rate with 0 failures and 0 errors**.
 
-### Style Guide Compliance
-- **Java**: Adheres strictly to the **Google Java Style Guide** (2-space indentation, no wildcard imports, strict 100-character line length limits, modern record classes).
-- **TypeScript / React**: Adheres strictly to the **Google JavaScript/TypeScript Style Guide** (functional components, typed interfaces, Fast Refresh context separation).
+### Running Frontend Build & Typecheck
+```bash
+cd petstore-frontend
+npm run build
+```
+- Fully type-checked TypeScript compilation and optimized production bundle.
 
 ---
 
-## Legacy Baseline Preservation Notice
+## 📚 Documentation & Knowledge Base
 
-This repository maintains strict non-destructive compliance:
-- All original files in `src/`, `build.xml`, `setup.sh`, and `build/` are unmodified from their original 2002 Sun Microsystems distribution.
-- The modernization layer lives exclusively in `petstore-modern/`, `petstore-frontend/`, and `scripts/`.
-- The authentic legacy application remains deployable in Apache TomEE via Docker on port `8000` / `8088`.
+For in-depth architectural analyses, operational playbooks, and runbooks, consult the repository documentation:
+
+| Document | Link | Description |
+| :--- | :--- | :--- |
+| **GitHub Wiki** | [PetStore Migration Wiki](https://github.com/deepeshgodara/petstore-migration/wiki) | Complete 6-chapter wiki: Architecture Overview, Legacy Deep-Dive, Service Catalog, On-Call Runbooks, Troubleshooting, and MongoDB Compass Guide. |
+| **Modernization Design Doc** | [`MODERNIZATION_DESIGN_DOC.md`](MODERNIZATION_DESIGN_DOC.md) | Comprehensive 48KB architectural specification covering schema transformations, dual-write mechanics, and event schemas. |
+| **Legacy Architecture & LLD** | [`baseline_design/README.md`](baseline_design/README.md) | Low-level design diagrams: Class diagrams, Sequence diagrams, ER diagrams, and State machines for the 2002 baseline. |
+| **Docker Operations Guide** | [`DOCKER_GUIDE.md`](DOCKER_GUIDE.md) | Deep dive into the legacy container, OpenEJB configuration, and port mappings. |
+| **Project History & Issues** | [`PROJECT_HISTORY_AND_ISSUES.md`](PROJECT_HISTORY_AND_ISSUES.md) | Chronological log of all engineering challenges encountered and resolved during modernization. |
 
 ---
 

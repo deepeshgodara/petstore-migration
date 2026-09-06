@@ -280,8 +280,10 @@ def main():
     # 4. COPY ALL AUTHENTIC STATIC ASSETS
     print("\nCopying static image assets...")
     assets_dir = os.path.join(OUTPUT_DIR, "static_assets")
-    os.makedirs(assets_dir, exist_ok=True)
-    os.system(f"cp -r src/apps/petstore/src/docroot/images/* {assets_dir}/")
+    if os.path.exists("petstore-legacy/src/apps/petstore/src/docroot/images"):
+        os.system(f"cp -r petstore-legacy/src/apps/petstore/src/docroot/images/* {assets_dir}/")
+    else:
+        os.system(f"cp -r src/apps/petstore/src/docroot/images/* {assets_dir}/")
 
     # 5. GENERATE COMPREHENSIVE README.md IN legacy_reference/
     print("\nGenerating legacy_reference/README.md...")

@@ -24,18 +24,18 @@ LLD documents detail the internal mechanics, object structures, database schemas
 
 | Document | Key Diagrams & Content Covered |
 | :--- | :--- |
-| **[Class Diagrams](file:///Users/deepeshgodara/Documents/petstore1.3.1_02/baseline_design/LLD/class_diagrams.md)** | WAF Web Controller tier, Session Facade & State tier, FastLane DAO pattern, and EJB 2.0 CMP Entity Bean relationships. |
-| **[Sequence Diagrams](file:///Users/deepeshgodara/Documents/petstore1.3.1_02/baseline_design/LLD/sequence_diagrams.md)** | End-to-end lifecycles: FastLane Catalog Browsing, Shopping Cart Session manipulation, User SignOn & Authentication, and Asynchronous Order Fulfillment via JMS/MDBs. |
-| **[Entity-Relationship (ER) Diagrams](file:///Users/deepeshgodara/Documents/petstore1.3.1_02/baseline_design/LLD/entity_relationship_diagrams.md)** | Physical schemas for `PetStoreDB`, `OPCDB`, and `SupplierDB`, table definitions, primary/foreign keys, and column constraints. |
-| **[State Machine Diagrams](file:///Users/deepeshgodara/Documents/petstore1.3.1_02/baseline_design/LLD/state_machine_diagrams.md)** | State transitions for Purchase Orders (`Pending` -> `Approved` -> `Processing` -> `Completed`), Stateful Session Beans (SFSB Cart), and User Authentication sessions. |
-| **[Flowcharts and Pseudocode](file:///Users/deepeshgodara/Documents/petstore1.3.1_02/baseline_design/LLD/flowcharts_and_pseudocode.md)** | WAF Front Controller request pipeline algorithm, FastLane vs EJB decision routing, and Block Allocation Unique ID generation algorithm. |
+| **[Class Diagrams](LLD/class_diagrams.md)** | WAF Web Controller tier, Session Facade & State tier, FastLane DAO pattern, and EJB 2.0 CMP Entity Bean relationships. |
+| **[Sequence Diagrams](LLD/sequence_diagrams.md)** | End-to-end lifecycles: FastLane Catalog Browsing, Shopping Cart Session manipulation, User SignOn & Authentication, and Asynchronous Order Fulfillment via JMS/MDBs. |
+| **[Entity-Relationship (ER) Diagrams](LLD/entity_relationship_diagrams.md)** | Physical schemas for `PetStoreDB`, `OPCDB`, and `SupplierDB`, table definitions, primary/foreign keys, and column constraints. |
+| **[State Machine Diagrams](LLD/state_machine_diagrams.md)** | State transitions for Purchase Orders (`Pending` -> `Approved` -> `Processing` -> `Completed`), Stateful Session Beans (SFSB Cart), and User Authentication sessions. |
+| **[Flowcharts and Pseudocode](LLD/flowcharts_and_pseudocode.md)** | WAF Front Controller request pipeline algorithm, FastLane vs EJB decision routing, and Block Allocation Unique ID generation algorithm. |
 
 ---
 
 ### 3. Standalone Runner Architecture
 | Document | Content Covered |
 | :--- | :--- |
-| **[Runner Architecture & Workflow](file:///Users/deepeshgodara/Documents/petstore1.3.1_02/runner/README.md)** | Design and implementation of the lightweight embedded Java 21 runner, emulating J2EE WAF MVC, session state tracking, in-memory database models, and view rendering. |
+| **[Runner Architecture & Workflow](../petstore-legacy-thin-runner/README.md)** | Design and implementation of the lightweight embedded Java 21 runner, emulating J2EE WAF MVC, session state tracking, in-memory database models, and view rendering. |
 
 ---
 

@@ -1,7 +1,7 @@
 # Pet Store Native Runner: Architecture & Design
 
 > [!NOTE]
-> **Purpose**: The `runner/` module provides a **zero-dependency, native Java 21 LTS simulation engine** for the 2002 Java Pet Store. It allows developers and architects to run and inspect the complete legacy UI, catalog hierarchy, conversational shopping cart, customer accounts, and administrative workflows on modern macOS without requiring a heavy 2002 J2EE 1.3.1 container or modifying any original source files in `src/`.
+> **Purpose**: The `petstore-legacy-thin-runner/` module provides a **zero-dependency, native Java 21 LTS simulation engine** for the 2002 Java Pet Store. It allows developers and architects to run and inspect the complete legacy UI, catalog hierarchy, conversational shopping cart, customer accounts, and administrative workflows on modern macOS without requiring a heavy 2002 J2EE 1.3.1 container or modifying any original source files in `petstore-legacy/src/`.
 
 ---
 
@@ -75,11 +75,11 @@ flowchart TB
 - **Embedded Web Server**: Uses `com.sun.net.httpserver.HttpServer` listening on `http://localhost:8080`.
 - **Session Tracking**: Maintains conversational session state via `ConcurrentHashMap<String, UserSession>`. Session IDs are transmitted in the standard `PS_SESSION` HTTP cookie and attached to all 200 OK responses and 302 redirects.
 - **Action Processing**: Dispatches POST actions (`/petstore/cart.do`, `/petstore/order.do`, `/petstore/signon.do`, `/petstore/changelocale.do`) and redirects the user to the corresponding `.screen` view.
-- **Static Assets**: Streams images directly from `src/apps/petstore/src/docroot/images/` with proper MIME headers (`image/gif`, `image/jpeg`).
+- **Static Assets**: Streams images directly from `petstore-legacy/src/apps/petstore/src/docroot/images/` with proper MIME headers (`image/gif`, `image/jpeg`).
 
 ### 2.2 `PetStoreDatabase.java` (Data Layer Simulation)
 - **Singleton In-Memory Datastore**: Emulates `PetStoreDB`, `OPCDB`, and `SupplierDB`.
-- **XML Seeding**: Parses `src/apps/petstore/src/docroot/populate/Populate-UTF8.xml` on server boot to load all 5 pet categories (`FISH`, `DOGS`, `REPTILES`, `CATS`, `BIRDS`), 16 products, 28 items, and default users (`j2ee`, `shopper`).
+- **XML Seeding**: Parses `petstore-legacy/src/apps/petstore/src/docroot/populate/Populate-UTF8.xml` on server boot to load all 5 pet categories (`FISH`, `DOGS`, `REPTILES`, `CATS`, `BIRDS`), 16 products, 28 items, and default users (`j2ee`, `shopper`).
 
 ### 2.3 `PetStoreModels.java` (Domain Entities)
 - Contains clean, POJO data structures for `Category`, `Product`, `Item`, `Cart`, `CartItem`, `Customer`, `Address`, `CreditCard`, and `Order`.
@@ -120,7 +120,7 @@ sequenceDiagram
 
 ## 4. Comparison: Legacy J2EE vs Runner vs Phase 2 Spring Boot
 
-| Capability | 2002 J2EE 1.3 Baseline | Standalone Runner (`runner/`) | Phase 2 Modernized (Spring Boot) |
+| Capability | 2002 J2EE 1.3 Baseline | Standalone Thin Runner (`petstore-legacy-thin-runner/`) | Phase 2 Modernized (Spring Boot) |
 | :--- | :--- | :--- | :--- |
 | **Runtime** | Sun JDK 1.3 / OpenEJB 4 (JDK 8) | Java 21 LTS | Java 21 LTS |
 | **Framework** | Custom WAF + EJB 2.0 CMP/BMP | Lightweight Embedded HttpServer | Spring Boot 3.3.x + Spring MVC / REST |

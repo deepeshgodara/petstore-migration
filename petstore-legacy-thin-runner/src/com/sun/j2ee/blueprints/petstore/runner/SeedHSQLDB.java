@@ -7,7 +7,10 @@ import java.util.*;
 
 public class SeedHSQLDB {
     public static void main(String[] args) throws Exception {
-        File populateXml = new File("src/apps/petstore/src/docroot/populate/Populate-UTF8.xml");
+        File populateXml = new File("petstore-legacy/src/apps/petstore/src/docroot/populate/Populate-UTF8.xml");
+        if (!populateXml.exists()) {
+            populateXml = new File("src/apps/petstore/src/docroot/populate/Populate-UTF8.xml");
+        }
         PetStoreDatabase db = PetStoreDatabase.getInstance();
         db.initialize(populateXml);
 
