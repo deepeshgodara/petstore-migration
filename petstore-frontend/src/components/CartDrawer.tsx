@@ -160,6 +160,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   : '/images/birds_icon.gif';
 
                 const lineTotal = Number(cartItem.item.listPrice) * cartItem.quantity;
+                const localizedName = cartItem.product.names?.[locale] || cartItem.product.name;
+                const localizedAttr = cartItem.item.attributes?.[locale] || cartItem.item.attribute || cartItem.item.itemId;
 
                 return (
                   <div
@@ -176,7 +178,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   >
                     <img
                       src={img}
-                      alt={cartItem.product.name}
+                      alt={localizedName}
                       style={{
                         width: '56px',
                         height: '56px',
@@ -200,10 +202,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                           textOverflow: 'ellipsis',
                         }}
                       >
-                        {cartItem.product.name}
+                        {localizedName}
                       </h4>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-                        {cartItem.item.attribute || cartItem.item.itemId} • ${Number(cartItem.item.listPrice).toFixed(2)}
+                        {localizedAttr} • ${Number(cartItem.item.listPrice).toFixed(2)}
                       </div>
 
                       {/* Quantity Controls */}
