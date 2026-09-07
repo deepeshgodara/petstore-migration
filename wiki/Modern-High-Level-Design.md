@@ -257,7 +257,7 @@ flowchart TB
     subgraph Frontend["Modern React 18 SPA Layer"]
         F1["1.0 Storefront & Multilingual Cart"]
         F2["2.0 Customer Account & Orders"]
-        F3["3.0 Admin Dashboard (Swing 2.0)"]
+        F3["3.0 Admin Console & Sales Analytics"]
         F4["4.0 Supplier Inventory Portal"]
         F5["5.0 Migration & Parity Monitor"]
     end

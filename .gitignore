@@ -30,3 +30,11 @@ derby.log
 tmp/
 temp/
 node_modules/
+
+# Presentations, Videos & Screenshots
+docs/presentation/
+docs/demo_screenshots/
+*.mp4
+*.webm
+*.webp
+*.pptx

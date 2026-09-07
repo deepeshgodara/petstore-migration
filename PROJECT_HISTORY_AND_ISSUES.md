@@ -1041,9 +1041,9 @@ Add a feature : For engineers add a mongo db based metrics, where they can see t
 ```
 
 #### Problem Analysis & Action Taken:
-- **Action Summary**: Delivered a major three-part enterprise feature expansion: interactive sales category analytics (Swing 2.0), live MongoDB engine diagnostics with Compass integration, and an exhaustive 6-chapter GitHub Wiki documentation suite.
+- **Action Summary**: Delivered a major three-part enterprise feature expansion: interactive sales category analytics in the modern React Admin Console (replacing the legacy Swing desktop client), live MongoDB engine diagnostics with Compass integration, and an exhaustive 6-chapter GitHub Wiki documentation suite.
 - **Technical Implementation**:
-  1. **Interactive Sales Analytics (Swing 2.0)**: Added date range filtering (7D, 30D, 90D, 1Y), dynamic SVG category breakdown donut chart, SVG category volume bar chart, and customer cohort metrics (unique customers, returning customer rate, average order value) in `AdminDashboard.tsx`.
+  1. **Interactive Sales Analytics (React SPA Console)**: Added date range filtering (7D, 30D, 90D, 1Y), dynamic SVG category breakdown donut chart, SVG category volume bar chart, and customer cohort metrics (unique customers, returning customer rate, average order value) in `AdminDashboard.tsx`.
   2. **MongoDB Diagnostics & Compass**: Implemented `MongoDiagnosticsService` in `petstore-migration-service` (`GET /api/v1/migration/diagnostics/mongo`), integrated live telemetry into `/ops`, created `scripts/mongo_compass_connect.sh`, and added one-click Compass connection string copying.
   3. **GitHub Wiki Suite**: Created complete wiki in `wiki/`: `Home.md`, `Architecture-Overview.md`, `Service-Catalog.md`, `OnCall-Support-&-Maintenance.md`, `Debugging-&-Troubleshooting-Guide.md`, `Database-&-MongoDB-Compass-Guide.md`, `_Sidebar.md`, and `_Footer.md`.
 
@@ -1223,7 +1223,7 @@ The complete modernized Pet Store platform is fully operational and verified:
 ===================================================================
   Modern Storefront:          http://localhost:3000/ (HTTP 200)
   Customer Account:           http://localhost:3000/account (Protected)
-  Admin Console (Swing 2.0):  http://localhost:3000/admin (Protected)
+  Admin Console (React Web):  http://localhost:3000/admin (Protected)
   Supplier Inventory Portal:  http://localhost:3000/supplier (Protected)
   Migration Parity Monitor:   http://localhost:3000/ops (Protected)
   Catalog Microservice:       http://localhost:8081/api/v1/categories (HTTP 200)

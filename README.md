@@ -317,7 +317,7 @@ The modern platform uses Role-Based Access Control (RBAC). The login modal inclu
 ### 2. Admin Portal & Sales Category Analytics (`/admin`)
 - Complete modern web replacement for the authentic 2002 Java Web Start / Swing desktop client (`AdminApp.jar`).
 - **Pending Orders Queue**: One-click order approval or rejection emitting Kafka events (`petstore.orders.approved`).
-- **Interactive Sales Analytics (Swing 2.0)**:
+- **Interactive Sales & Category Analytics (React SPA)**:
   - Date range filtering (7 Days, 30 Days, 90 Days, 1 Year).
   - Dynamic **SVG Category Breakdown Donut Chart** showing sales volume by pet category.
   - Dynamic **SVG Category Volume Bar Chart**.

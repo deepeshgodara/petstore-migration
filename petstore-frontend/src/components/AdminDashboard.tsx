@@ -270,7 +270,7 @@ export const AdminDashboard: React.FC = () => {
               color: adminTab === 'analytics' ? '#ffffff' : '#38bdf8',
             }}
           >
-            Swing 2.0
+            Analytics
           </span>
         </button>
       </div>
