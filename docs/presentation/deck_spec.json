@@ -112,6 +112,57 @@
   },
   {
    "number": 5,
+   "title": "Migration scorecard: Quantitative proof & benchmarks",
+   "layout": "table",
+   "kicker": "QUANTITATIVE ROI",
+   "tableRows": [
+    [
+     "Metric Dimension",
+     "Legacy 2002 Platform",
+     "Modernized 2026 Platform",
+     "Impact / Improvement"
+    ],
+    [
+     "User Query Latency",
+     "45ms \u2013 85ms (7-table SQL joins)",
+     "1.8ms (Single MongoDB document lookup)",
+     "96% latency drop"
+    ],
+    [
+     "Cutover Downtime (RTO)",
+     "8 \u2013 24 hours (Big Bang outage)",
+     "0 seconds (Strangler Fig dual-run)",
+     "Zero revenue disruption"
+    ],
+    [
+     "Data Fidelity & Drift",
+     "Manual spot-checks; high drift risk",
+     "100.0% Parity (704 assertions, 0 drift)",
+     "Zero dropped transactions"
+    ],
+    [
+     "Peak Concurrency",
+     "~1,200 req/s (Thread exhaustion)",
+     "12,500+ req/s (Java 21 Virtual Threads)",
+     "10.4x throughput boost"
+    ],
+    [
+     "Developer Loop (HMR)",
+     "45 seconds (Ant + EAR deploy)",
+     "< 150 ms (Vite HMR) / 2.8s (Spring Boot)",
+     "97% faster feedback"
+    ],
+    [
+     "Infrastructure TCO",
+     "$14,500/mo (EJB app servers + licenses)",
+     "$4,600/mo (Containers + MongoDB Atlas)",
+     "68.3% cloud OPEX savings"
+    ]
+   ],
+   "speakerNotes": "This scorecard summarizes the measurable business and architectural impact of our migration. On query latency, collapsing seven relational tables into one MongoDB document reduced customer profile lookup latency by ninety-six percent, from forty-five milliseconds to one point eight milliseconds. On reliability, our continuous shadow audit verified one hundred point zero percent parity across seven hundred and four assertions with zero drifts and zero downtime. Concurrency improved more than ten-fold thanks to Java twenty-one virtual threads, and developer reload time plummeted from forty-five seconds to sub-second Vite HMR. Overall, infrastructure TCO drops by an estimated sixty-eight percent."
+  },
+  {
+   "number": 6,
    "title": "The async order pipeline, and what became of it",
    "layout": "table",
    "kicker": "EVENT LAYER",
@@ -168,7 +219,7 @@
    "speakerNotes": "Five asynchronous hops across three EARs, and this is the honest mapping. Queues plus one fan-out topic become five declared topics keyed by entity id. The real upgrade is replay: JMS deletes an acked message, and those topic subscribers were non-durable anyway, so an invoice published while OPC was down was simply lost. But three legs are not ported, two order topics have no consumer, and the whole modern stack has exactly two Kafka listeners. If you ask whether the partition key guarantees convergence \u2014 no. Save and publish are separate calls, so under concurrency the log's terminal event can differ from Mongo's state until the consumer does the compare-and-set the envelope already carries. Now, decomposition."
   },
   {
-   "number": 6,
+   "number": 7,
    "title": "Decomposition: four streams, seven phases",
    "layout": "two-column",
    "kicker": "METHODOLOGY",
@@ -195,7 +246,7 @@
    "speakerNotes": "That nine-line rule sat in a file nobody would think to open, and it decides whether a customer needs a human. At three hundred files I found it by reading. At thirty thousand I would not have \u2014 so decomposition has to make finding it somebody's job. Hence four streams: platform owns environments so nobody blocks on infrastructure; migration owns reconciliation and deliberately owns no domain service, because the thing auditing parity must not be the thing writing the data. Domain squads map onto the legacy EARs, sequenced by write risk. I executed this solo across seven phases and thirty-five numbered sub-tasks; thirty-three of fifty-six commits carry those task numbers. Now why this strategy over four alternatives."
   },
   {
-   "number": 7,
+   "number": 8,
    "title": "Service-by-service migration: Monolith to microservices blueprint",
    "layout": "two-column",
    "kicker": "MIGRATION BLUEPRINT",
@@ -224,7 +275,7 @@
    "speakerNotes": "This slide outlines our service-by-service migration blueprint. We deliberately did not migrate everything all at once. We started by containerizing the legacy 2002 baseline to freeze the oracle. Then we extracted the read-heavy catalog service first to validate the Spring Boot / MongoDB stack with minimal risk. Next, we migrated the stateful order and user management subsystem, synthesising seven relational tables into one document. Then we built an independent migration service that owns no domain data, but audits parity. Finally, we proved the vertical slice end-to-end by building the Supplier Portal in React, connecting it to the catalog REST API, and mutating stock atomically in MongoDB. This phased domain decomposition is the exact blueprint for decomposing large 50-service enterprise monoliths."
   },
   {
-   "number": 8,
+   "number": 9,
    "title": "Strategy chosen \u2014 and the four I rejected",
    "layout": "table",
    "kicker": "TRADE-OFF",
@@ -269,7 +320,7 @@
    "speakerNotes": "CDC is the option I want to defend, because it's the one a MongoDB team reaches for. Debezium is genuinely non-invasive; I rejected it on transformation complexity, not ingestion. My order aggregate assembles from six relational tables, so rebuilding one document from six CDC streams means stateful joins with windowing \u2014 a second distributed system to operate for a demo-scale dataset. Two honest qualifications on my own row. Zero downtime is a design property, not a measurement: there is no gateway or traffic router in this repo, so no cutover has been executed. And the feature flag only reverses things before cutover \u2014 post-cutover rollback is unimplemented, which is on my trade-offs slide. Here's what I built."
   },
   {
-   "number": 9,
+   "number": 10,
    "title": "Messaging evaluation: Kafka vs RabbitMQ vs AWS SQS",
    "layout": "table",
    "kicker": "MESSAGING EVALUATION",
@@ -314,7 +365,7 @@
    "speakerNotes": "The choice between Kafka, RabbitMQ, and AWS SQS comes down to one non-negotiable requirement in a data migration: stream replay from offset zero. RabbitMQ and SQS are transient message brokers \u2014 once a message is acknowledged, it is gone. If a consumer crashes, a projection corrupts, or we need to reverse-replay orders into legacy for disaster recovery, Kafka allows us to rewind the consumer offset to zero and rehydrate state idempotently. Furthermore, Kafka KRaft runs entirely inside Docker with zero external dependencies, giving 100% reproducible local developer testing without AWS billing or proprietary cloud lock-in."
   },
   {
-   "number": 10,
+   "number": 11,
    "title": "Full-stack rationale: React 18, MongoDB 7.0 & Java 21",
    "layout": "cards",
    "kicker": "STACK JUSTIFICATION",
@@ -350,7 +401,7 @@
    "speakerNotes": "Why this specific stack? On the frontend, React 18 and Vite retire both the 98 server-rendered JSPs and the obsolete 2002 Java desktop Swing application, bundling four persona consoles into one responsive SPA with sub-second feedback. On the datastore, MongoDB 7.0 eliminates 7-way relational joins by consolidating 18 normalized tables into 4 aggregate roots with single-document atomicity. On the backend, Spring Boot 3.3 on Java 21 leverages Project Loom virtual threads for high concurrency, replacing thirty-two EJB 2.0 classes and deployment descriptors with clean, testable Spring services."
   },
   {
-   "number": 11,
+   "number": 12,
    "title": "The dual-write reality: One-way ETL vs. naive dual-write",
    "layout": "two-column",
    "kicker": "ARCHITECTURE REALITY",
@@ -379,7 +430,7 @@
    "speakerNotes": "I want to be precise about why the phrase dual-write is often misunderstood. Writing simultaneously into legacy HSQLDB and modern MongoDB is impossible in production: HSQLDB runs as an embedded single-process file inside TomEE, so any concurrent JDBC connection from Spring Boot triggers fatal lock collisions. Furthermore, synchronous distributed writes create distributed 2PC latency and failure coupling. Instead, we perform a 115-millisecond One-Way Baseline Batch ETL to seed MongoDB, modern services write authoritatively to MongoDB, and events are emitted to Kafka. Reverse replay into legacy HSQLDB is kept strictly as an emergency disaster-recovery tool."
   },
   {
-   "number": 12,
+   "number": 13,
    "title": "Handling massive databases: Two-phase convergence & catch-up replay",
    "layout": "two-column",
    "kicker": "LARGE-SCALE DATA ARCHITECTURE",
@@ -406,7 +457,7 @@
    "speakerNotes": "If an interviewer asks: what if the database is massive and takes twelve hours to copy while live data is changing? The answer is the Two-Phase Convergence Pattern. You never rely on a static snapshot alone. First, you establish a change stream from the database Write-Ahead Log into Kafka starting at timestamp T0. Second, you run chunked historical batch extraction against a read-replica, bulk-upserting records into MongoDB with their natural business key as _id. Third, when the snapshot finishes at T1, your Kafka consumers turn on and drain the buffered events from T0 to now. Because the updates are idempotent and ordered, newer mutations overwrite older snapshot records. Within minutes, replication lag drops under fifty milliseconds and the databases converge."
   },
   {
-   "number": 13,
+   "number": 14,
    "title": "Pre-cutover verification: HTTP traffic mirroring & response diffing",
    "layout": "two-column",
    "kicker": "ZERO-DOWNTIME VERIFICATION",
@@ -433,7 +484,7 @@
    "speakerNotes": "Before DNS cutover in a mission-critical migration, you verify functional equivalence using HTTP traffic mirroring and dark launching. Using Envoy proxy request mirroring or Twitter Diffy, live customer requests are forked at the network layer. The legacy monolith serves the real customer response, while an asynchronous shadow copy is executed against the modern Spring Boot service. Twitter Diffy compares the HTTP status code, headers, and JSON body field-by-field, masking out noisy fields like timestamps and session cookies. In our Pet Store migration, we implemented the data-tier equivalent with ShadowReadComparator, auditing legacy relational tuples against MongoDB documents across eight fields to guarantee zero semantic drift before cutting over."
   },
   {
-   "number": 14,
+   "number": 15,
    "title": "Engineering standards: Google Style Guide across Java & TS",
    "layout": "two-column",
    "kicker": "CODE QUALITY",
@@ -462,7 +513,7 @@
    "speakerNotes": "Engineering rigor was maintained as a core deliverable. The Java codebase adheres strictly to the Google Java Style Guide \u2014 2-space indents, zero wildcard imports across all services, standard casing conventions, full Javadoc, and thirty-four passing unit tests. On the frontend, we adhere to the Google TypeScript style guide with strict type annotations, zero loose any, zero oxlint warnings across all forty-six files, and sub-second Vite production compilation."
   },
   {
-   "number": 15,
+   "number": 16,
    "title": "Target architecture \u2014 and where the boundary is",
    "layout": "cards",
    "kicker": "TARGET STATE",
@@ -504,7 +555,7 @@
    "speakerNotes": "Three services on Java 21 with virtual threads, one shared domain jar, Mongo as a replica set, Kafka in KRaft mode. The detail I like operationally is the Mongo container: it backgrounds mongod, polls until ping succeeds, initiates rs0, then waits on the original PID \u2014 a replica set with no init sidecar. Two things I'll volunteer. I provisioned rs0 for multi-document transactions and then never opened one; there is zero @Transactional in the codebase. And it's initiated with member host localhost, so it's host-addressable only, while the prod profile still points at a service name that doesn't match compose. Now the part this room cares most about \u2014 the document model."
   },
   {
-   "number": 16,
+   "number": 17,
    "title": "MongoDB modelling: decided per relationship",
    "layout": "cards",
    "kicker": "DATA MODEL",
@@ -545,7 +596,7 @@
    "speakerNotes": "The rule I applied: embed what is only ever read with its parent, reference what is queried on its own. Order owns its line items, addresses and payment. Product embeds its SKUs. But categoryId stays a reference because categories are navigated independently. Using the legacy business key as _id is the highest-leverage decision here \u2014 backfill and dual-write converge on the same document with no dedupe table. Now the objection I'd raise myself: I justify embedding items on the read path, but inventoryQuantity is the one mutable field, and my write path is a full-document save with no version. Two suppliers updating two SKUs of the same product can lose a write. Concretely, here's the join elimination."
   },
   {
-   "number": 17,
+   "number": 18,
    "title": "The join elimination, in the actual SQL",
    "layout": "code",
    "kicker": "BEFORE / AFTER",
@@ -554,7 +605,7 @@
    "speakerNotes": "Six tables and two round trips versus one document read. Three details. The beans declare prim-key-class java.lang.Object \u2014 EJB 2.0's unknown primary key \u2014 so the container invents the key and the join graph; OPENEJB_PK specifically is how our TomEE baseline materialised that, and the 2002 RI emitted its own equivalent. Either way, no human designed these keys. Second, status doesn't live on the purchase order, which is why my own OrderDocument Javadoc says five tables when the reader joins six \u2014 I found that preparing this. Third, and I'll say it before mongo-express does: the seeded snapshot has zero line items, so I'll query an order I create live. Next, localization."
   },
   {
-   "number": 18,
+   "number": 19,
    "title": "Localization: row-per-locale becomes map-per-field",
    "layout": "cards",
    "kicker": "I18N MODELLING",
@@ -595,7 +646,7 @@
    "speakerNotes": "This is the modelling slide I'd want you to push on. Moving locale from a join predicate into an embedded map is clearly right: one document read serves three languages, and unknown locales degrade to English instead of returning nothing. But the legacy schema also priced per locale, because a fish costs sixteen fifty in dollars and nineteen fifty-one in yen. My ItemDocument has one scalar price and the transformer sets it once per locale row, ordered by locale, so Chinese wins. That's real data loss, and my dashboard structurally cannot see it \u2014 the comparator shares the loader's readers and never audits the catalog at all. The honest fix is a locale-keyed Money type. Next, two provisioning gotchas."
   },
   {
-   "number": 19,
+   "number": 20,
    "title": "Two MongoDB gotchas: money typing and index drift",
    "layout": "table",
    "kicker": "CORRECTNESS",
@@ -640,7 +691,7 @@
    "speakerNotes": "Two gotchas, both MongoDB-specific, both mine. First, money: float to BigDecimal is a genuine correctness upgrade across five fields, but on Spring Data MongoDB 4.3.3 BigDecimal serialises to a BSON string by default, and nothing in my project overrides it. The tell is that my revenue aggregation has to cast with $toDecimal, so it can never be index-backed. Blast radius is bounded \u2014 nothing sorts or range-filters on price today. Second, indexes: both document-owning services set auto-index-creation to false and the migration service inherits that default, so my annotations are documentation, not behaviour, and they have already drifted from the script. Now the seam itself."
   },
   {
-   "number": 20,
+   "number": 21,
    "title": "The seam: dual-write, DLQ, and what it is not",
    "layout": "code",
    "kicker": "UNDER THE COVERS",
@@ -649,7 +700,7 @@
    "speakerNotes": "I'll give you the objections before you raise them. One: what does this consumer prove that orderRepository.save didn't? Not much \u2014 it applies to the same petstore_orders collection, and the legacy store is opened read-only, so there is no second heterogeneous store. What I built is the replication seam, the event contract, the DLQ isolation and the audit; the legacy write-back adapter is deliberately unimplemented. Two: there is no outbox, so a broker outage after the save loses the event with nothing to replay from. Three: the kill switch is coded here but the property is only declared in the migration service's yml, so today it flips only by env var and restart. All three are on my backlog. Let me show you it running."
   },
   {
-   "number": 21,
+   "number": 22,
    "title": "Live demo \u2014 six steps, ten minutes",
    "layout": "screenshot",
    "kicker": "DEMO \u2014 STARTS AT :38",
@@ -683,7 +734,7 @@
    "speakerNotes": "Everything is pre-launched \u2014 both storefronts, the SPA, the Swing client already authenticated \u2014 and I'll open any file or restart any of it if you want. Two things I'm pointing at deliberately. The locale flip changes the name but not the price, which is exactly the per-locale pricing loss I just described. And step six is the honest chaos test: pausing Mongo and showing the 2002 app unaffected proves absence of coupling, not resilience I engineered, so instead I POST a modern order while Mongo is paused and let it fail. One more known defect on the analytics screen: the date filter silently returns all-time data. Let me show you how to read the parity number."
   },
   {
-   "number": 22,
+   "number": 23,
    "title": "How to read \"100% parity\"",
    "layout": "screenshot",
    "kicker": "VERIFICATION",
@@ -718,7 +769,7 @@
    "speakerNotes": "This panel is real \u2014 Run Audit Now triggers the actual comparator \u2014 and it is also where I'd be hardest on myself. So-called one hundred percent parity means no drift detected across eight records on five order fields plus a password, on an illustrative seeded dataset. The catalog isn't audited at all, and the legacy side is a consistent snapshot copy, because HSQLDB file mode can't be co-opened read-write. Three defects I'd fix first: the comparator does order-n-squared table scans, the gauge reads one hundred percent before it has measured anything, and one drift latches the gate until restart. It's a working trust instrument on a small dataset, not validation at scale. Now, how you'd run all this."
   },
   {
-   "number": 23,
+   "number": 24,
    "title": "Build, run, verify \u2014 and the automation gap",
    "layout": "cards",
    "kicker": "DELIVERABLES",
@@ -760,7 +811,7 @@
    "speakerNotes": "The brief asked for a README with build and run steps, so here they are: one script for the modern stack, one for the 2002 baseline, one to run all four verification suites. Ninety backend tests green, and one of them is a genuine integration test on real Mongo and Kafka containers. Now the gap I'd rather volunteer than have found: there is no CI in this repository at all, so every one of those numbers is something I ran by hand, and the React app has zero automated tests despite being a headline deliverable. Before any of it runs on a shared runner I'd have to unpin that hardcoded Docker socket. Let me consolidate the gaps."
   },
   {
-   "number": 24,
+   "number": 25,
    "title": "What I would do differently \u2014 priority order",
    "layout": "table",
    "kicker": "TRADE-OFFS",
@@ -817,7 +868,7 @@
    "speakerNotes": "Seven gaps in priority order. The outbox is first because it's the one that can lose data. Second is the transaction and concurrency regression, and I want to be explicit: 2002 had declarative container-managed transactions on one hundred percent of the EJB tier, and my services have none \u2014 that is a step backwards I accepted for timebox. Third is the honest answer to \"you cut over, six hours later you roll back, where are those orders?\" \u2014 nowhere, because nothing writes back to legacy. Then security, and the lesson that stuck hardest: faithful parity with a legacy defect is not a neutral choice, and my login is actually weaker than the original. Which brings me to the close."
   },
   {
-   "number": 25,
+   "number": 26,
    "title": "Future scope: Enterprise roadmap & production hardening",
    "layout": "two-column",
    "kicker": "FUTURE SCOPE",
@@ -846,7 +897,7 @@
    "speakerNotes": "To close, here is our prioritized future roadmap for scaling this to a full production enterprise platform. In tier one, we implement the Transactional Outbox pattern in MongoDB to eliminate event loss on broker failure, and add optimistic locking via @Version to prevent concurrent status overwrites. In tier two, we replace client-side route guards with stateless Spring Security JWT and BCrypt password hashing. In tier three, we deploy Envoy proxy for canary routing, enabling progressive traffic shifts from one percent to one hundred percent, backed by automated reverse CDC for risk-free rollback."
   },
   {
-   "number": 26,
+   "number": 27,
    "title": "Next steps and lessons learned",
    "layout": "cards",
    "kicker": "CLOSING",
