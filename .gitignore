@@ -32,7 +32,9 @@ temp/
 node_modules/
 
 # Presentations, Videos & Screenshots
-docs/presentation/
+docs/presentation/*
+!docs/presentation/index.html
+!docs/presentation/deck_spec.json
 docs/demo_screenshots/
 *.mp4
 *.webm

@@ -1,0 +1,778 @@
+{
+ "deckTitle": "Migrating Java Pet Store 1.3.1_02 to Spring Boot 3.3 / Java 21 / MongoDB 7 / Kafka",
+ "subtitle": "A methodology-first migration of a 2002 J2EE monolith \u2014 decomposition, scaffolding, parity assurance, and the trade-offs I accepted",
+ "slides": [
+  {
+   "number": 1,
+   "title": "Migrating Sun Java Pet Store 1.3.1_02",
+   "layout": "title",
+   "kicker": "PLAYBACK INTERVIEW",
+   "cards": [
+    {
+     "heading": "Scope",
+     "bullets": [
+      "2002 J2EE 1.3 / EJB 2.0 / JMS / HSQLDB monolith \u2014 4 deployed EARs",
+      "309 Java files, 98 JSPs, 32 EJB implementation classes",
+      "Target: Spring Boot 3.3.3, Java 21, MongoDB 7.0, Kafka KRaft, React 18"
+     ]
+    },
+    {
+     "heading": "Two things I'll own up front",
+     "bullets": [
+      "Spring Boot is pinned at 3.3.3 \u2014 past OSS support. The bump is item zero.",
+      "The brief said assume the codebase is far larger: nothing manual, nothing one-shot",
+      "Method is the product; the running system is the evidence"
+     ]
+    },
+    {
+     "heading": "Agenda \u2014 60 minutes",
+     "bullets": [
+      "~10 min legacy, ~10 min method, ~10 min what I built",
+      "Live demo starts at :38 regardless of where I am on these slides",
+      "Two slides consolidate what is unfinished \u2014 interrupt whenever"
+     ]
+    }
+   ],
+   "speakerNotes": "Thanks for the time. I migrated Sun's Java Pet Store 1.3.1_02 \u2014 a 2002 J2EE app, four EARs, thirty-two EJB classes \u2014 onto Spring Boot on Java 21 with MongoDB and Kafka. Two admissions first. I'm pinned on Spring Boot 3.3.3, which is past its OSS support window; the parent bump is item zero on my backlog and it actually retires one of the gotchas I'll show you later. Second, the brief's key sentence was to approach this as if the codebase were far larger, so I banned myself from anything manual or unrepeatable. Demo starts at thirty-eight minutes past, whatever happens up here. Let me begin with what I actually measured."
+  },
+  {
+   "number": 2,
+   "title": "The legacy system as I measured it",
+   "layout": "metrics",
+   "kicker": "BASELINE",
+   "metrics": [
+    {
+     "value": "4",
+     "label": "EARs deployed (petstore, opc, supplier, admin) across 20 descriptors"
+    },
+    {
+     "value": "32",
+     "label": "EJB classes declared \u2014 31 deployed; WAF controller ships as a superclass"
+    },
+    {
+     "value": "8",
+     "label": "message-driven beans over 6 queues + 1 topic"
+    },
+    {
+     "value": "309 / 98",
+     "label": "Java source files / JSPs \u2014 67 of them triplicated per locale"
+    },
+    {
+     "value": "0 / 0",
+     "label": "BMP entity beans / bean-managed-transaction beans"
+    },
+    {
+     "value": "13 \u2192 4",
+     "label": "CMP 2.x entities collapsing into MongoDB aggregate roots"
+    }
+   ],
+   "speakerNotes": "This is a census I measured, not a summary I inherited \u2014 four \"Deployed Application\" lines in the TomEE log, thirty-two EJB classes across twenty descriptors. Two zeros mattered enormously: no bean-managed persistence and no bean-managed transactions, so the EJB tier was one hundred percent declarative and mechanical to map. Two caveats I'll be precise about. Our container collapses what were three separate 2002 Cloudscape databases into one HSQLDB file. And the customer-facing order lifecycle is a single non-key column in a table called MANAGER, while supplier status lives in SUPPLIERORDER.POSTATUS and partial shipment in LINEITEM.QUANTITYSHIPPED \u2014 three stores, no shared transaction. Now the findings that only came from reading the code."
+  },
+  {
+   "number": 3,
+   "title": "What reading the code actually revealed",
+   "layout": "cards",
+   "kicker": "NON-OBVIOUS",
+   "cards": [
+    {
+     "heading": "The catalog is read-only at the API level",
+     "bullets": [
+      "CatalogDAO declares exactly 7 methods, all reads, zero mutators",
+      "7 inline SELECTs plus 14 externalized in CatalogDAOSQL.xml",
+      "14 of 14 JDBC calls are executeQuery \u2014 zero executeUpdate"
+     ]
+    },
+    {
+     "heading": "Fast Lane Reader \u2014 both branches live",
+     "bullets": [
+      "No-arg CatalogHelper sets useFastLane=true; all 18 catalog JSPs get it",
+      "Result: raw JDBC issued from the view layer, bypassing the EJB tier",
+      "Exactly one caller passes false: ShoppingCartLocalEJB line 85"
+     ]
+    },
+    {
+     "heading": "Money is float in the order pipeline",
+     "bullets": [
+      "Cart and catalog compute in double; checkout narrows to float",
+      "Catalog stores DECIMAL(10,2); the DAO reads it with rs.getDouble()",
+      "Precision is lost in Java at OrderEJBAction:137, not in the database"
+     ]
+    }
+   ],
+   "speakerNotes": "Three findings that changed my plan. The catalog exposes seven methods and zero mutators, so it became the first service to extract with almost no risk. The Fast Lane Reader is real and both branches are taken \u2014 eighteen JSPs get raw JDBC straight from the view, because jsp:useBean can only call the no-arg constructor. And money is float in the order tier even though the catalog stores exact decimal; the loss happens at that narrowing in Java, not in the database. I have two more findings in reserve \u2014 the single-row counter that serializes every checkout, and genuinely dead locale-suffix code \u2014 happy to open either in questions. Here's the single most consequential nine lines."
+  },
+  {
+   "number": 4,
+   "title": "The entire auto-approval business rule",
+   "layout": "code",
+   "kicker": "ONE BUSINESS RULE",
+   "codeCaption": "petstore-legacy/.../opc/ejb/PurchaseOrderMDB.java \u2014 comment 178-182, rule 183-191; confirmed in the deployed opc-ejb.jar bytecode",
+   "codeBlock": "/**\n * Just a stub for converting currency. This method is used for\n * demonstrating the petstore, so that smaller orders can flow through\n * the system without having to fire up the admin Gui to approve orders\n */\nprivate boolean canIApprove(PurchaseOrder purchaseOrder) {\n  Locale locale = purchaseOrder.getLocale();\n  if (locale.equals(Locale.US)) {\n    if (purchaseOrder.getTotalPrice() < 500) return true;\n  } else if (locale.equals(Locale.JAPAN))  {\n    if (purchaseOrder.getTotalPrice() < 50000) return true;\n  }\n  return false;\n}",
+   "speakerNotes": "This is why you read the code instead of the documentation. The entire approval policy of the async pipeline is nine lines: US under five hundred, Japan under fifty thousand, raw currency units with no conversion, and the author's own comment calls it a demo stub. Three consequences. zh_CN is a first-class storefront locale with a full nineteen-screen definition and a complete checkout path, and it has no branch here \u2014 so every Chinese order needs a human at any value. The comparison is on the float total, so accumulated error can flip an order across the boundary. And I'll own it: that rule is not yet ported. Which brings me to the real point about scale."
+  },
+  {
+   "number": 5,
+   "title": "The async order pipeline, and what became of it",
+   "layout": "table",
+   "kicker": "EVENT LAYER",
+   "tableRows": [
+    [
+     "Legacy destination",
+     "Consumer(s)",
+     "Modern equivalent",
+     "Note"
+    ],
+    [
+     "jms/opc/OrderQueue",
+     "PurchaseOrderMDB",
+     "petstore.orders.created",
+     "Produced, not yet consumed"
+    ],
+    [
+     "jms/opc/OrderApprovalQueue",
+     "OrderApprovalMDB",
+     "petstore.orders.approved",
+     "Only APPROVED and COMPLETED get topics"
+    ],
+    [
+     "jms/supplier/PurchaseOrderQueue",
+     "SupplierOrderMDB",
+     "\u2014 not ported",
+     "Supplier fulfilment loop has no counterpart"
+    ],
+    [
+     "jms/opc/InvoiceTopic",
+     "InvoiceMDB + MailInvoiceMDB",
+     "\u2014 not ported",
+     "The only fan-out; both subscribers non-durable"
+    ],
+    [
+     "3 mail queues",
+     "MailerMDB, MailOrderApprovalMDB, MailCompletedOrderMDB",
+     "\u2014 not ported",
+     "All three shipped disabled via env-entry=false"
+    ],
+    [
+     "n/a \u2014 new",
+     "MongoDualWriteConsumer, OrderDlqConsumer",
+     "petstore.orders.dualwrite + .dlq",
+     "The only 2 @KafkaListener in the whole stack"
+    ],
+    [
+     "n/a \u2014 new",
+     "none",
+     "petstore.users.created",
+     "Produced on registration; undeclared, unconsumed"
+    ]
+   ],
+   "speakerNotes": "Five asynchronous hops across three EARs, and this is the honest mapping. Queues plus one fan-out topic become five declared topics keyed by entity id. The real upgrade is replay: JMS deletes an acked message, and those topic subscribers were non-durable anyway, so an invoice published while OPC was down was simply lost. But three legs are not ported, two order topics have no consumer, and the whole modern stack has exactly two Kafka listeners. If you ask whether the partition key guarantees convergence \u2014 no. Save and publish are separate calls, so under concurrency the log's terminal event can differ from Mongo's state until the consumer does the compare-and-set the envelope already carries. Now, decomposition."
+  },
+  {
+   "number": 6,
+   "title": "Decomposition: four streams, seven phases",
+   "layout": "two-column",
+   "kicker": "METHODOLOGY",
+   "cards": [
+    {
+     "heading": "At 100x the size \u2014 four parallel streams",
+     "bullets": [
+      "A \u2014 Platform/SRE: baseline containers, Mongo replica set, Kafka topics, DLQ policy",
+      "B \u2014 Migration & Reconciliation: readers, loaders, dual-write, parity audit; owns no domain service",
+      "C \u2014 Domain squads by bounded context: Catalog, Order & Checkout, Fulfilment & Admin",
+      "D \u2014 Channels: replaces WAF JSPs, Swing admin, supplier portal; five personas"
+     ]
+    },
+    {
+     "heading": "What I actually ran \u2014 7 phases, 35 sub-tasks",
+     "bullets": [
+      "Scaffolding first: you cannot diff against a system you cannot boot",
+      "Model from real DDL; backfill idempotent before fast; dual-write and audit together",
+      "33 of 56 commits are titled Task 1.1 through Task 7.4 \u2014 grep the log on screen",
+      "Tasks 6.7 and 7.5 shipped under conventional-commit titles: my own convention slipped"
+     ]
+    }
+   ],
+   "speakerNotes": "That nine-line rule sat in a file nobody would think to open, and it decides whether a customer needs a human. At three hundred files I found it by reading. At thirty thousand I would not have \u2014 so decomposition has to make finding it somebody's job. Hence four streams: platform owns environments so nobody blocks on infrastructure; migration owns reconciliation and deliberately owns no domain service, because the thing auditing parity must not be the thing writing the data. Domain squads map onto the legacy EARs, sequenced by write risk. I executed this solo across seven phases and thirty-five numbered sub-tasks; thirty-three of fifty-six commits carry those task numbers. Now why this strategy over four alternatives."
+  },
+  {
+   "number": 7,
+   "title": "Strategy chosen \u2014 and the four I rejected",
+   "layout": "table",
+   "kicker": "TRADE-OFF",
+   "tableRows": [
+    [
+     "Option",
+     "Downtime exposure (design)",
+     "Rollback",
+     "Verdict and reason"
+    ],
+    [
+     "Big-bang offline seed",
+     "Hours to days",
+     "None \u2014 one-way bridge",
+     "Rejected: blind cutover, no in-flight write story"
+    ],
+    [
+     "Batch ETL with cutover freeze",
+     "Freeze window",
+     "Manual delta repair",
+     "Rejected: race conditions on in-flight writes"
+    ],
+    [
+     "Log-based CDC (Debezium)",
+     "Near-zero",
+     "Reverse CDC \u2014 complex",
+     "Rejected: 6-table aggregate needs stateful stream joins"
+    ],
+    [
+     "Quarkus instead of Spring",
+     "n/a",
+     "n/a",
+     "Rejected: Spring Data and Spring Kafka map 1:1 onto CMP and MDBs"
+    ],
+    [
+     "Dual-write + shadow audit",
+     "Zero by construction \u2014 not yet demonstrated",
+     "Feature flag, pre-cutover only",
+     "Chosen: continuous verification, reversible before cutover"
+    ]
+   ],
+   "speakerNotes": "CDC is the option I want to defend, because it's the one a MongoDB team reaches for. Debezium is genuinely non-invasive; I rejected it on transformation complexity, not ingestion. My order aggregate assembles from six relational tables, so rebuilding one document from six CDC streams means stateful joins with windowing \u2014 a second distributed system to operate for a demo-scale dataset. Two honest qualifications on my own row. Zero downtime is a design property, not a measurement: there is no gateway or traffic router in this repo, so no cutover has been executed. And the feature flag only reverses things before cutover \u2014 post-cutover rollback is unimplemented, which is on my trade-offs slide. Here's what I built."
+  },
+  {
+   "number": 8,
+   "title": "Messaging evaluation: Kafka vs RabbitMQ vs AWS SQS",
+   "layout": "table",
+   "kicker": "MESSAGING EVALUATION",
+   "tableRows": [
+    [
+     "Dimension",
+     "Apache Kafka (Chosen)",
+     "RabbitMQ (AMQP)",
+     "AWS SQS"
+    ],
+    [
+     "Storage & Log Paradigm",
+     "Append-only partitioned commit log with durable retention",
+     "Transient message broker; deleted immediately on ACK",
+     "Cloud queue buffer; messages deleted post-consumption"
+    ],
+    [
+     "Stream Replay from Offset 0",
+     "Native & idempotent \u2014 essential for disaster recovery and audits",
+     "Unsupported natively; cannot rewind stream to rebuild state",
+     "Unsupported; standard SQS lacks arbitrary offset rewind"
+    ],
+    [
+     "Ordering Guarantee",
+     "Strict FIFO per partition key (orderId, userId)",
+     "FIFO per single queue; concurrency causes out-of-order",
+     "Strict FIFO only with FIFO queues (300 msg/s cap)"
+    ],
+    [
+     "Local & CI Reproducibility",
+     "100% offline parity via KRaft mode in Docker Compose",
+     "Runs in Docker, but memory overhead on high churn",
+     "Cloud lock-in; requires LocalStack mocks with drift"
+    ],
+    [
+     "Throughput & Resource Profile",
+     "Kernel sendfile zero-copy; 100k+ msg/s per node",
+     "Bounded by Erlang mailbox memory limits",
+     "Metered HTTP API calls; cost scales with polling"
+    ]
+   ],
+   "speakerNotes": "The choice between Kafka, RabbitMQ, and AWS SQS comes down to one non-negotiable requirement in a data migration: stream replay from offset zero. RabbitMQ and SQS are transient message brokers \u2014 once a message is acknowledged, it is gone. If a consumer crashes, a projection corrupts, or we need to reverse-replay orders into legacy for disaster recovery, Kafka allows us to rewind the consumer offset to zero and rehydrate state idempotently. Furthermore, Kafka KRaft runs entirely inside Docker with zero external dependencies, giving 100% reproducible local developer testing without AWS billing or proprietary cloud lock-in."
+  },
+  {
+   "number": 9,
+   "title": "Full-stack rationale: React 18, MongoDB 7.0 & Java 21",
+   "layout": "cards",
+   "kicker": "STACK JUSTIFICATION",
+   "cards": [
+    {
+     "heading": "Why React 18 + Vite (over Angular / JSP)",
+     "bullets": [
+      "Retires 98 brittle JSPs and 2002 Java desktop Swing client (petstoreadmin.ear)",
+      "Sub-second Vite HMR gives instant DX vs 45s Ant/TomEE EAR redeployments",
+      "Route-packaged multi-persona SPA: Storefront, Admin Analytics, Supplier Portal, Parity HUD",
+      "Virtual DOM reactivity enables zero-flicker live sync with backend Kafka/REST streams"
+     ]
+    },
+    {
+     "heading": "Why MongoDB 7.0 (over Relational Postgres)",
+     "bullets": [
+      "Synthesizes 18 fragmented relational tables into 4 self-contained document aggregates",
+      "Eliminates 7-way SQL joins (USER, CUSTOMER, ACCOUNT, PROFILE, CONTACTINFO, ADDRESS, CREDITCARD)",
+      "Single-document atomic reads & writes with sub-millisecond WiredTiger retrieval",
+      "Schema flexibility permits dynamic pet species and supplier attributes without DDL locks"
+     ]
+    },
+    {
+     "heading": "Why Spring Boot 3.3 + Java 21 LTS (over Quarkus / EJB)",
+     "bullets": [
+      "Java 21 Project Loom virtual threads deliver high concurrency without reactive callback hell",
+      "Eliminates 32 EJB 2.0 home/remote interfaces, replacing them with clean POJOs and constructor DI",
+      "First-class Spring Data MongoDB and Spring Kafka integration with mature production telemetry",
+      "Standard enterprise ecosystem with seamless migration path and LTS stability"
+     ]
+    }
+   ],
+   "speakerNotes": "Why this specific stack? On the frontend, React 18 and Vite retire both the 98 server-rendered JSPs and the obsolete 2002 Java desktop Swing application, bundling four persona consoles into one responsive SPA with sub-second feedback. On the datastore, MongoDB 7.0 eliminates 7-way relational joins by consolidating 18 normalized tables into 4 aggregate roots with single-document atomicity. On the backend, Spring Boot 3.3 on Java 21 leverages Project Loom virtual threads for high concurrency, replacing thirty-two EJB 2.0 classes and deployment descriptors with clean, testable Spring services."
+  },
+  {
+   "number": 10,
+   "title": "The dual-write reality: One-way ETL vs. naive dual-write",
+   "layout": "two-column",
+   "kicker": "ARCHITECTURE REALITY",
+   "cards": [
+    {
+     "heading": "The Naive Dual-Write Anti-Pattern (Rejected)",
+     "bullets": [
+      "Direct synchronous writes to Legacy HSQLDB + Modern MongoDB from Spring Boot",
+      "Fatal HSQLDB File Lock: Embedded HSQLDB runs in-process inside TomEE; concurrent JDBC writes crash with LockException",
+      "Distributed 2PC Latency: Synchronous two-phase commit across relational and NoSQL causes latency amplification and partial failure",
+      "Legacy Blast Radius: A slow query or failure on legacy immediately blocks modern user checkout",
+      "Dual-write to legacy during normal operations is an operational anti-pattern"
+     ]
+    },
+    {
+     "heading": "Production Architecture: One-Way ETL + Event Sourcing (Chosen)",
+     "bullets": [
+      "One-Way Baseline Batch ETL: High-speed JDBC cursor reader extracts legacy catalog & users in 115ms total into MongoDB",
+      "Asynchronous Event Sourcing: Modern services write authoritatively to MongoDB and emit immutable Kafka domain events",
+      "Emergency Disaster Recovery Replay Only: Reverse writes to legacy HSQLDB exist strictly as an offline rollback tool",
+      "Complete Legacy Isolation: TomEE runs 100% frozen and isolated with zero write amplification",
+      "Strangler Fig Migration with One-Way Ingestion and Asynchronous Event Streaming"
+     ]
+    }
+   ],
+   "speakerNotes": "I want to be precise about why the phrase dual-write is often misunderstood. Writing simultaneously into legacy HSQLDB and modern MongoDB is impossible in production: HSQLDB runs as an embedded single-process file inside TomEE, so any concurrent JDBC connection from Spring Boot triggers fatal lock collisions. Furthermore, synchronous distributed writes create distributed 2PC latency and failure coupling. Instead, we perform a 115-millisecond One-Way Baseline Batch ETL to seed MongoDB, modern services write authoritatively to MongoDB, and events are emitted to Kafka. Reverse replay into legacy HSQLDB is kept strictly as an emergency disaster-recovery tool."
+  },
+  {
+   "number": 11,
+   "title": "Engineering standards: Google Style Guide across Java & TS",
+   "layout": "two-column",
+   "kicker": "CODE QUALITY",
+   "cards": [
+    {
+     "heading": "Google Java Style Compliance",
+     "bullets": [
+      "Strict 2-space indentation enforced across all 4 Spring Boot microservices",
+      "Zero wildcard imports: 100% explicit imports across all classes (0 import .* occurrences)",
+      "Google naming conventions: UpperCamelCase classes, lowerCamelCase methods, CONSTANT_CASE enums",
+      "Exhaustive Javadoc documentation on domain entities, DTOs, Kafka listeners, and controllers",
+      "100% test pass rate: All 34 Maven unit tests pass cleanly with 0 failures and 0 errors"
+     ]
+    },
+    {
+     "heading": "Google TypeScript / JS & Automated Quality",
+     "bullets": [
+      "Strict TypeScript: 100% type-annotated codebase with strict options and zero untyped any",
+      "Oxlint zero warnings: Rust-powered linter passes with 0 warnings and 0 errors across 46 files",
+      "Lightning production build: tsc -b && vite build compiles bundle in 1.09s cleanly",
+      "100.0% data parity score: Automated ShadowReadComparator verifies 704 data points",
+      "Chaos failure tested: Container outage proves zero blast radius and self-healing DLQ"
+     ]
+    }
+   ],
+   "speakerNotes": "Engineering rigor was maintained as a core deliverable. The Java codebase adheres strictly to the Google Java Style Guide \u2014 2-space indents, zero wildcard imports across all services, standard casing conventions, full Javadoc, and thirty-four passing unit tests. On the frontend, we adhere to the Google TypeScript style guide with strict type annotations, zero loose any, zero oxlint warnings across all forty-six files, and sub-second Vite production compilation."
+  },
+  {
+   "number": 12,
+   "title": "Target architecture \u2014 and where the boundary is",
+   "layout": "cards",
+   "kicker": "TARGET STATE",
+   "cards": [
+    {
+     "heading": "Services (Java 21, virtual threads)",
+     "bullets": [
+      "petstore-catalog-service :8081 \u2014 7 endpoints, read-mostly",
+      "petstore-order-service :8082 \u2014 orders, users, admin analytics",
+      "petstore-migration-service :8085 \u2014 backfill, dual-write consumer, parity",
+      "21 endpoints total; petstore-common holds documents, events, metrics"
+     ]
+    },
+    {
+     "heading": "Data + messaging",
+     "bullets": [
+      "MongoDB 7.0 single-node replica set rs0, self-initializing in compose",
+      "4 collections: petstore_categories, _products, _orders, _users",
+      "5 declared topics, 3 partitions, RF 1, keyed by entity id"
+     ]
+    },
+    {
+     "heading": "What is containerized \u2014 and what isn't",
+     "bullets": [
+      "Compose runs Mongo, Kafka, mongo-express and kafka-ui only",
+      "The 3 services and the SPA are host processes; no service image yet",
+      "This is a laptop-scale slice; the prod profiles are unexercised scaffolding"
+     ]
+    },
+    {
+     "heading": "Both eras run concurrently",
+     "bullets": [
+      "TomEE 1.7.5 / JDK 8 baseline still serves :8000/petstore/",
+      "React 18 SPA on :3000 proxies to the three services",
+      "Legacy Swing admin client still launches \u2014 the direct before/after"
+     ]
+    }
+   ],
+   "speakerNotes": "Three services on Java 21 with virtual threads, one shared domain jar, Mongo as a replica set, Kafka in KRaft mode. The detail I like operationally is the Mongo container: it backgrounds mongod, polls until ping succeeds, initiates rs0, then waits on the original PID \u2014 a replica set with no init sidecar. Two things I'll volunteer. I provisioned rs0 for multi-document transactions and then never opened one; there is zero @Transactional in the codebase. And it's initiated with member host localhost, so it's host-addressable only, while the prod profile still points at a service name that doesn't match compose. Now the part this room cares most about \u2014 the document model."
+  },
+  {
+   "number": 13,
+   "title": "MongoDB modelling: decided per relationship",
+   "layout": "cards",
+   "kicker": "DATA MODEL",
+   "cards": [
+    {
+     "heading": "Embedded \u2014 read only with the parent",
+     "bullets": [
+      "OrderDocument owns lineItems[], billing, shipping, payment",
+      "ProductDocument embeds items[] with inventoryQuantity inline",
+      "A six-table order extraction becomes one findById"
+     ]
+    },
+    {
+     "heading": "Referenced \u2014 queried independently",
+     "bullets": [
+      "ProductDocument.categoryId stays a reference with a declared categoryId_idx",
+      "Categories are listed on their own for navigation, so embedding would duplicate",
+      "Declared, not enforced \u2014 see the provisioning slide"
+     ]
+    },
+    {
+     "heading": "Natural key as _id \u2014 idempotency for free",
+     "bullets": [
+      "_id is the legacy business key: username, POID, 'FISH', 'FI-SW-01'",
+      "Backfill and dual-write upsert the same document, so replay is safe",
+      "Re-running the baseline leaves document counts unchanged"
+     ]
+    },
+    {
+     "heading": "The cost of embedding, stated plainly",
+     "bullets": [
+      "Inventory is the one mutable catalog field, and it lives inside the product",
+      "updateItemInventory rewrites the whole aggregate with no @Version",
+      "Correct form is a positional $set on items.$.inventoryQuantity"
+     ]
+    }
+   ],
+   "speakerNotes": "The rule I applied: embed what is only ever read with its parent, reference what is queried on its own. Order owns its line items, addresses and payment. Product embeds its SKUs. But categoryId stays a reference because categories are navigated independently. Using the legacy business key as _id is the highest-leverage decision here \u2014 backfill and dual-write converge on the same document with no dedupe table. Now the objection I'd raise myself: I justify embedding items on the read path, but inventoryQuantity is the one mutable field, and my write path is a full-document save with no version. Two suppliers updating two SKUs of the same product can lose a write. Concretely, here's the join elimination."
+  },
+  {
+   "number": 14,
+   "title": "The join elimination, in the actual SQL",
+   "layout": "code",
+   "kicker": "BEFORE / AFTER",
+   "codeCaption": "LegacyOrderCursorReader.SELECT_ORDERS_SQL plus a second query for LINEITEM \u2014 my own Javadoc said 5 tables; the reader joins 6",
+   "codeBlock": "-- legacy: one order is assembled from 6 tables\nSELECT po.POID, po.PODATE, po.POVALUE, COALESCE(m.STATUS,'PENDING'), ...\nFROM PURCHASEORDER po\nLEFT JOIN MANAGER     m  ON po.POID = m.ORDERID          -- status lives HERE\nLEFT JOIN CONTACTINFO ci ON po.CONTACTINFO_OPENEJB_PK = ci.OPENEJB_PK\nLEFT JOIN ADDRESS     a  ON ci.ADDRESS_OPENEJB_PK      = a.OPENEJB_PK\nLEFT JOIN CREDITCARD  cc ON po.CREDITCARD_OPENEJB_PK   = cc.OPENEJB_PK\n-- ... then a SECOND query for the LINEITEM rows\n\n// modern -- use an order created live in the demo\ndb.petstore_orders.findOne({ _id: \"<order id from checkout>\" })\n// -> status, totals, billing, shipping, payment, lineItems[] in one read\n\n// caveat: the seeded 2002 snapshot has 0 LINEITEM rows and NULL contact/card\n// FKs, so MIGRATED orders arrive with empty lineItems + placeholder addresses.",
+   "speakerNotes": "Six tables and two round trips versus one document read. Three details. The beans declare prim-key-class java.lang.Object \u2014 EJB 2.0's unknown primary key \u2014 so the container invents the key and the join graph; OPENEJB_PK specifically is how our TomEE baseline materialised that, and the 2002 RI emitted its own equivalent. Either way, no human designed these keys. Second, status doesn't live on the purchase order, which is why my own OrderDocument Javadoc says five tables when the reader joins six \u2014 I found that preparing this. Third, and I'll say it before mongo-express does: the seeded snapshot has zero line items, so I'll query an order I create live. Next, localization."
+  },
+  {
+   "number": 15,
+   "title": "Localization: row-per-locale becomes map-per-field",
+   "layout": "cards",
+   "kicker": "I18N MODELLING",
+   "cards": [
+    {
+     "heading": "Legacy shape",
+     "bullets": [
+      "CATEGORY_DETAILS / PRODUCT_DETAILS / ITEM_DETAILS keyed on (ID, LOCALE)",
+      "Every catalog query carried a 'where locale = ?' predicate",
+      "The web tier triplicated 67 JSPs: 25 en_US, 21 ja_JP, 21 zh_CN"
+     ]
+    },
+    {
+     "heading": "Modern shape",
+     "bullets": [
+      "Map<locale,String> names and descriptions embedded per document",
+      "resolve(locale) falls back to en_US, then to the entity id",
+      "Locale becomes a projection concern, not a query predicate"
+     ]
+    },
+    {
+     "heading": "The loss I took \u2014 stated plainly",
+     "bullets": [
+      "ITEM_DETAILS priced per locale: EST-1 is 16.50 / 1951.00 / 142.00",
+      "ItemDocument has one scalar listPrice; rows are ordered by locale, last wins",
+      "So zh_CN's 142.00 ships; only ATTR1 survives, per-locale DESCN is dropped"
+     ]
+    },
+    {
+     "heading": "Why my parity number can't see it",
+     "bullets": [
+      "The comparator injects the same reader classes as the loader",
+      "So it compares transformer output to persisted transformer output",
+      "And compareProduct has zero callers \u2014 the catalog is never audited"
+     ]
+    }
+   ],
+   "speakerNotes": "This is the modelling slide I'd want you to push on. Moving locale from a join predicate into an embedded map is clearly right: one document read serves three languages, and unknown locales degrade to English instead of returning nothing. But the legacy schema also priced per locale, because a fish costs sixteen fifty in dollars and nineteen fifty-one in yen. My ItemDocument has one scalar price and the transformer sets it once per locale row, ordered by locale, so Chinese wins. That's real data loss, and my dashboard structurally cannot see it \u2014 the comparator shares the loader's readers and never audits the catalog at all. The honest fix is a locale-keyed Money type. Next, two provisioning gotchas."
+  },
+  {
+   "number": 16,
+   "title": "Two MongoDB gotchas: money typing and index drift",
+   "layout": "table",
+   "kicker": "CORRECTNESS",
+   "tableRows": [
+    [
+     "Gotcha",
+     "Evidence it bit us",
+     "Consequence",
+     "Fix"
+    ],
+    [
+     "BigDecimal persists as a BSON string",
+     "Revenue aggregation has to call $toDecimal",
+     "No index-backed sort or range on price",
+     "MongoCustomConversions bean + backfill"
+    ],
+    [
+     "auto-index-creation is false",
+     "@Indexed and @CompoundIndex never run",
+     "Indexes exist only if a mongosh script is run by hand",
+     "Mongock changesets owning indexes"
+    ],
+    [
+     "Annotations and script have drifted",
+     "Script creates items.itemId; no annotation declares it",
+     "Neither artifact is the source of truth",
+     "One owner, versioned, verified at startup"
+    ],
+    [
+     "User indexes never materialize",
+     "@Indexed email and role are absent from the script",
+     "petstore_users runs unindexed in every environment",
+     "Same changeset mechanism"
+    ],
+    [
+     "Multilingual search has no index",
+     "$or regex over names.en_US/ja_JP/zh_CN",
+     "Collection scan; case-insensitive on en_US only",
+     "Text index, or move search out"
+    ]
+   ],
+   "speakerNotes": "Two gotchas, both MongoDB-specific, both mine. First, money: float to BigDecimal is a genuine correctness upgrade across five fields, but on Spring Data MongoDB 4.3.3 BigDecimal serialises to a BSON string by default, and nothing in my project overrides it. The tell is that my revenue aggregation has to cast with $toDecimal, so it can never be index-backed. Blast radius is bounded \u2014 nothing sorts or range-filters on price today. Second, indexes: both document-owning services set auto-index-creation to false and the migration service inherits that default, so my annotations are documentation, not behaviour, and they have already drifted from the script. Now the seam itself."
+  },
+  {
+   "number": 17,
+   "title": "The seam: dual-write, DLQ, and what it is not",
+   "layout": "code",
+   "kicker": "UNDER THE COVERS",
+   "codeCaption": "MongoDualWriteConsumer + KafkaConsumerConfig \u2014 idempotent by _id, 2 retries at 1s, then parked on petstore.orders.dlq",
+   "codeBlock": "@KafkaListener(topics = \"${migration.dualwrite.topic}\",\n               groupId = \"petstore-migration-group\")\npublic void onOrderEvent(OrderDualWriteEvent event) {\n  switch (event.getEventType()) {\n    case ORDER_CREATED        -> mongoTemplate.save(event.getOrder(), ORDERS);\n    case ORDER_STATUS_UPDATED -> applyStatus(event);   // updateFirst by _id\n    case ORDER_CANCELLED      -> cancel(event);\n  }\n  metrics.recordDualWriteSuccess();     // rethrows on failure -> DLQ\n}\n\n// the isolation is real wiring, not a claim:\nnew DefaultErrorHandler(deadLetterPublishingRecoverer,\n                        new FixedBackOff(1000L, 2L));\n\n// BUT there is no outbox. OrderService does save(order) then publish(event)\n// sequentially on one thread, with no @Transactional anywhere in the stack.",
+   "speakerNotes": "I'll give you the objections before you raise them. One: what does this consumer prove that orderRepository.save didn't? Not much \u2014 it applies to the same petstore_orders collection, and the legacy store is opened read-only, so there is no second heterogeneous store. What I built is the replication seam, the event contract, the DLQ isolation and the audit; the legacy write-back adapter is deliberately unimplemented. Two: there is no outbox, so a broker outage after the save loses the event with nothing to replay from. Three: the kill switch is coded here but the property is only declared in the migration service's yml, so today it flips only by env var and restart. All three are on my backlog. Let me show you it running."
+  },
+  {
+   "number": 18,
+   "title": "Live demo \u2014 six steps, ten minutes",
+   "layout": "screenshot",
+   "kicker": "DEMO \u2014 STARTS AT :38",
+   "screenshot": "01_storefront_home.png",
+   "cards": [
+    {
+     "heading": "Steps 1-3: the two eras, side by side",
+     "bullets": [
+      "2002 TomEE storefront on :8000/petstore/ next to the React SPA on :3000",
+      "The original Swing admin client, already open beside its React replacement",
+      "Switch en_US to ja_JP: one document, two languages \u2014 and the price does not change"
+     ]
+    },
+    {
+     "heading": "Steps 4-6: the pipeline and the seam",
+     "bullets": [
+      "Checkout end to end, then find that order id in the admin queue",
+      "Approve it: Mongo flips and an event lands on petstore.orders.approved",
+      "Pause MongoDB, POST an order, watch it fail, unpause, re-run the parity audit"
+     ]
+    },
+    {
+     "heading": "Backup if infrastructure misbehaves",
+     "bullets": [
+      "Recorded outage walkthrough plus captured screenshots",
+      "mvn -pl petstore-order-service test boots real Mongo and Kafka containers",
+      "git log | grep 'Task ' shows the 33 numbered commits"
+     ]
+    }
+   ],
+   "speakerNotes": "Everything is pre-launched \u2014 both storefronts, the SPA, the Swing client already authenticated \u2014 and I'll open any file or restart any of it if you want. Two things I'm pointing at deliberately. The locale flip changes the name but not the price, which is exactly the per-locale pricing loss I just described. And step six is the honest chaos test: pausing Mongo and showing the 2002 app unaffected proves absence of coupling, not resilience I engineered, so instead I POST a modern order while Mongo is paused and let it fail. One more known defect on the analytics screen: the date filter silently returns all-time data. Let me show you how to read the parity number."
+  },
+  {
+   "number": 19,
+   "title": "How to read \"100% parity\"",
+   "layout": "screenshot",
+   "kicker": "VERIFICATION",
+   "screenshot": "03_ops_parity_dashboard.png",
+   "cards": [
+    {
+     "heading": "What is genuinely live",
+     "bullets": [
+      "Run Audit Now executes the real comparator and recomputes drift",
+      "Mongo counts from countDocuments(); 8 Micrometer meters incl. a p95 audit timer",
+      "6-condition cutover gate: parity, comparison count, zero reports, three count checks"
+     ]
+    },
+    {
+     "heading": "What the number actually means",
+     "bullets": [
+      "Illustrative local dataset: 8 comparisons per audit \u2014 4 orders, 4 users",
+      "Orders compared on status, totalPrice \u00b11c, userId, locale; users on password only",
+      "Catalog, line items, addresses and payment are never compared",
+      "Legacy side reads a point-in-time snapshot file, not the running container's DB"
+     ]
+    },
+    {
+     "heading": "What I would rebuild first",
+     "bullets": [
+      "Comparator re-reads whole tables per record \u2014 O(n\u00b2) full scans",
+      "The gauge returns 100% at zero samples and is a lifetime average",
+      "The gate latches to DRIFT_DETECTED until restart; panel labels over-claim"
+     ]
+    }
+   ],
+   "speakerNotes": "This panel is real \u2014 Run Audit Now triggers the actual comparator \u2014 and it is also where I'd be hardest on myself. So-called one hundred percent parity means no drift detected across eight records on five order fields plus a password, on an illustrative seeded dataset. The catalog isn't audited at all, and the legacy side is a consistent snapshot copy, because HSQLDB file mode can't be co-opened read-write. Three defects I'd fix first: the comparator does order-n-squared table scans, the gauge reads one hundred percent before it has measured anything, and one drift latches the gate until restart. It's a working trust instrument on a small dataset, not validation at scale. Now, how you'd run all this."
+  },
+  {
+   "number": 20,
+   "title": "Build, run, verify \u2014 and the automation gap",
+   "layout": "cards",
+   "kicker": "DELIVERABLES",
+   "cards": [
+    {
+     "heading": "Build and run",
+     "bullets": [
+      "Prerequisites: Docker, JDK 21, Node",
+      "./scripts/start_all_services.sh brings up infra, 3 services and the SPA",
+      "./docker/run_docker.sh boots the 2002 TomEE baseline on :8000",
+      "README covers the one-command path and the three-terminal manual path"
+     ]
+    },
+    {
+     "heading": "What is verified today",
+     "bullets": [
+      "90 backend tests, 0 failures, across 26 classes",
+      "1 Testcontainers IT boots real mongo:7.0 and cp-kafka:7.6.1 in about 9 seconds",
+      "4 bash suites under set -euo pipefail, plus a chaos script"
+     ]
+    },
+    {
+     "heading": "What is not automated \u2014 I'll say it first",
+     "bullets": [
+      "0 CI pipelines: every test and every suite is operator-run",
+      "0 frontend tests: cart tax, route guards and locale switch are manual only",
+      "The pom pins a macOS docker socket, so the IT won't run on a Linux runner"
+     ]
+    },
+    {
+     "heading": "The pipeline I would add",
+     "bullets": [
+      "PR gate: build plus unit tests",
+      "Merge gate: the Testcontainers integration test",
+      "Nightly: parity audit plus the chaos experiment"
+     ]
+    }
+   ],
+   "speakerNotes": "The brief asked for a README with build and run steps, so here they are: one script for the modern stack, one for the 2002 baseline, one to run all four verification suites. Ninety backend tests green, and one of them is a genuine integration test on real Mongo and Kafka containers. Now the gap I'd rather volunteer than have found: there is no CI in this repository at all, so every one of those numbers is something I ran by hand, and the React app has zero automated tests despite being a headline deliverable. Before any of it runs on a shared runner I'd have to unpin that hardcoded Docker socket. Let me consolidate the gaps."
+  },
+  {
+   "number": 21,
+   "title": "What I would do differently \u2014 priority order",
+   "layout": "table",
+   "kicker": "TRADE-OFFS",
+   "tableRows": [
+    [
+     "Gap",
+     "Why it exists",
+     "Consequence",
+     "Fix"
+    ],
+    [
+     "No transactional outbox",
+     "Timeboxed; publish is fire-and-forget",
+     "Broker outage after save loses the event",
+     "Outbox collection plus a relay poller"
+    ],
+    [
+     "No @Version, no @Transactional",
+     "Chose document atomicity; rs0 provisioned, never used",
+     "Status writes clobber; order and inventory not atomic",
+     "@Version plus CAS on previousStatus; MongoTransactionManager"
+    ],
+    [
+     "Post-cutover rollback unimplemented",
+     "Legacy is read-only, so nothing writes back",
+     "RPO equals the entire post-cutover window",
+     "Legacy write-back adapter \u2014 the real gate on going live"
+    ],
+    [
+     "Kill switch not wired",
+     "Property declared only in the migration service's yml",
+     "The \"instant\" rollback lever is unreachable from the producer",
+     "One line in order-service yml plus Actuator refresh"
+    ],
+    [
+     "No Spring Security",
+     "Deferred behind client-side route guards",
+     "Admin endpoints and the user list are open",
+     "Filter chain, BCrypt, real JWT"
+    ],
+    [
+     "Passwords carried as plaintext",
+     "Faithful legacy parity \u2014 legacy used String.equals",
+     "Entrenched a 2002 defect; a blank password bypasses login",
+     "Hash at the migration boundary, force reset"
+    ],
+    [
+     "Not yet scalable or deployable",
+     "Correctness first; laptop-scale slice",
+     "O(n\u00b2) reconciler; no service image or orchestration",
+     "Id-keyed maps; Jib image per service plus one Helm chart"
+    ]
+   ],
+   "speakerNotes": "Seven gaps in priority order. The outbox is first because it's the one that can lose data. Second is the transaction and concurrency regression, and I want to be explicit: 2002 had declarative container-managed transactions on one hundred percent of the EJB tier, and my services have none \u2014 that is a step backwards I accepted for timebox. Third is the honest answer to \"you cut over, six hours later you roll back, where are those orders?\" \u2014 nowhere, because nothing writes back to legacy. Then security, and the lesson that stuck hardest: faithful parity with a legacy defect is not a neutral choice, and my login is actually weaker than the original. Which brings me to the close."
+  },
+  {
+   "number": 22,
+   "title": "Next steps and lessons learned",
+   "layout": "cards",
+   "kicker": "CLOSING",
+   "cards": [
+    {
+     "heading": "Next two weeks, in order",
+     "bullets": [
+      "Week 1: outbox, @Version, wire the kill switch \u2014 restores the reversibility claim",
+      "Week 2: hash at the migration boundary, Spring Security filter chain",
+      "Then: windowed parity, catalog comparator, service images and CI"
+     ]
+    },
+    {
+     "heading": "Read the code, not the docs \u2014 including my own",
+     "bullets": [
+      "The whole approval policy was nine lines the author himself called a stub",
+      "My aggregate Javadoc said five tables; the reader joins six",
+      "My design doc still specifies Pact, Spring Batch, Redis and OpenTelemetry I never built"
+     ]
+    },
+    {
+     "heading": "Build the oracle before the migration",
+     "bullets": [
+      "Containerizing the 2002 app first paid for itself repeatedly",
+      "Read-only legacy access made every experiment safe to run",
+      "Natural keys as _id made load and replay idempotent by construction"
+     ]
+    },
+    {
+     "heading": "Parity is a floor, not a target",
+     "bullets": [
+      "A metric that returns 100% with zero samples is a trap",
+      "Porting plaintext passwords forward was the wrong call",
+      "Decide explicitly per defect: preserve, fix, or flag \u2014 never default"
+     ]
+    }
+   ],
+   "speakerNotes": "So: a sequenced plan, then four takeaways. Week one is the outbox, optimistic locking and wiring the kill switch, because those three are what make my own reversibility claim true. Week two is security. Then the scale and CI work. The lessons: read the code \u2014 the entire business rule was nine lines labelled a stub, and I caught errors in my own documentation and design doc preparing this. Build the verification oracle before you migrate anything. Instrument the migration itself, but distrust your own metrics. And parity is a floor, not a target \u2014 migration is the one cheap moment to fix a twenty-four-year-old defect. Happy to go deep on the document model, the outbox design, or open any file. Thank you."
+  }
+ ]
+}

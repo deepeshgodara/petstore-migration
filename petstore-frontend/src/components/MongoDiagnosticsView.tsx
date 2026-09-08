@@ -32,7 +32,21 @@ export const MongoDiagnosticsView: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchDiagnostics();
+    let active = true;
+    migrationService
+      .getMongoDiagnostics()
+      .then((data) => {
+        if (active) setDiagnostics(data);
+      })
+      .catch((err) => {
+        console.error('Failed to load MongoDB diagnostics:', err);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Optional 5s auto-refresh interval for live engineering monitoring

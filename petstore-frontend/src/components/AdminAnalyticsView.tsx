@@ -84,7 +84,24 @@ export const AdminAnalyticsView: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchAnalytics();
+    let isMounted = true;
+    orderService
+      .getAdminAnalytics()
+      .then((resp) => {
+        if (isMounted) {
+          setData(resp);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (isMounted) {
+          console.error('Failed to load admin analytics:', err);
+          setLoading(false);
+        }
+      });
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handlePresetSelect = (preset: 'all' | '30d' | '7d' | 'today' | 'custom') => {

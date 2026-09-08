@@ -300,20 +300,130 @@ if os.path.exists(p_img5):
     slide9.shapes.add_picture(p_img5, Inches(5.9), Inches(1.8), width=Inches(6.6))
 
 # ==============================================================================
-# SLIDE 10: Top Interview Questions: Architecture & Data Integrity
+# SLIDE 10: Architectural Clarification: One-Way Baseline ETL vs. Naive Dual-Write
 # ==============================================================================
 slide10 = prs.slides.add_slide(blank_layout)
 apply_background(slide10)
-add_header(slide10, "Architectural Interview Deep Dive: Dual-Write & ACID", category="SYSTEM DESIGN INTERVIEW PREPARATION")
+add_header(slide10, "Architecture Reality Check: One-Way Baseline ETL vs. Naive Dual-Write", category="ARCHITECTURE REALITY CHECK")
 
-add_card(slide10, 0.8, 1.8, 5.6, 5.0, "Q1: Why Dual-Write over CDC / Debezium?", [
+add_card(slide10, 0.8, 1.8, 5.6, 5.0, "The Naive Dual-Write Anti-Pattern", [
+    "Simultaneous Direct Writes to Legacy HSQLDB: Writing simultaneously from Spring Boot into legacy HSQLDB while TomEE is running.",
+    "Fatal File-Lock Collision: HSQLDB runs as an embedded single-process engine inside TomEE. Concurrent JDBC connections cause immediate LockException or database corruption.",
+    "Distributed 2PC Latency Spikes: Synchronous two-phase commit across legacy relational tables and modern MongoDB causes cascading latency and partial-failure drift.",
+    "Blast Radius Coupling: A crash, lock contention, or slow query in legacy HSQLDB immediately halts modern checkout operations.",
+    "Why Dual-Write Is a Misnomer: We never actively write into legacy HSQLDB during normal business operation."
+], border_color=RGBColor(239, 68, 68), title_color=RGBColor(248, 113, 113))
+
+add_card(slide10, 6.8, 1.8, 5.6, 5.0, "Our Production Architecture: One-Way ETL + Event Sourcing", [
+    "One-Way Baseline Batch ETL: High-speed JDBC cursor reader extracts legacy catalog & users in 115ms total, seeding MongoDB without modifying legacy tables.",
+    "Asynchronous Event Sourcing: Modern order & user services write authoritatively to MongoDB and emit immutable events to Kafka (petstore.orders.dualwrite, petstore.users.created).",
+    "Emergency Disaster Recovery Replay Only: Reverse writes to legacy HSQLDB exist strictly as an isolated, offline rollback utility (ReverseReplayService), never in active user request paths.",
+    "Zero Legacy Blast Radius: Legacy TomEE runs 100% frozen and isolated; modern load spikes have 0 impact on legacy stability.",
+    "True Architectural Pattern: Strangler Fig Migration with One-Way Ingestion and Asynchronous Kafka Event Streaming."
+], border_color=ACCENT_GREEN, title_color=ACCENT_GREEN)
+
+# ==============================================================================
+# SLIDE 11: Technology Evaluation: Why Apache Kafka over RabbitMQ or AWS SQS?
+# ==============================================================================
+slide11 = prs.slides.add_slide(blank_layout)
+apply_background(slide11)
+add_header(slide11, "Messaging Evaluation: Why Apache Kafka over RabbitMQ or AWS SQS?", category="TECHNOLOGY EVALUATION")
+
+add_card(slide11, 0.8, 1.8, 3.6, 5.0, "Apache Kafka 3.7 (Selected)", [
+    "Distributed Commit Log: Retains ordered events indefinitely across partitioned disk segments.",
+    "Offset 0 Replayability: Crucial for disaster recovery rollback, audit verification, and rebuilding MongoDB aggregates from scratch.",
+    "Partition Key Ordering: Strict per-entity FIFO sequencing guaranteed by partitioning on orderId or userId.",
+    "KRaft Container Mode: Zero cloud lock-in; runs fully self-contained in Docker for local dev, testing, and CI.",
+    "Zero-Copy Throughput: Kernel-level sendfile delivers 10x higher message throughput than traditional AMQP brokers."
+], border_color=ACCENT_BLUE, title_color=ACCENT_BLUE)
+
+add_card(slide11, 4.8, 1.8, 3.6, 5.0, "Why Not RabbitMQ?", [
+    "Transient Message Broker: Messages are immediately destroyed once ACKed; no native stream replay.",
+    "No Historical Backfill: Cannot rewind offsets to reconstruct lost database collections or rehydrate new microservices.",
+    "Memory-Heavy Queues: In-memory Erlang mailboxes incur severe memory bloat under backpressure vs Kafka disk pages.",
+    "Split-Brain Vulnerability: Mnesia network partition handling can cause silent message dropping or lost consumer state.",
+    "Queue Scaling Bottleneck: Single-queue throughput is bounded by single Erlang process CPU core limits."
+], border_color=CARD_BORDER, title_color=ACCENT_ORANGE)
+
+add_card(slide11, 8.8, 1.8, 3.6, 5.0, "Why Not AWS SQS?", [
+    "Proprietary Cloud Lock-In: AWS SDK dependency prevents running on-premise, multi-cloud, or air-gapped environments.",
+    "No Native Local Dev: Requires heavy LocalStack mock containers with behavioral drift and slow startup times.",
+    "No Stream Rewind: Standard SQS deletes messages post-consumption; lacks arbitrary time/offset replay.",
+    "FIFO Throughput Quotas: SQS FIFO is limited to 300-3000 msg/sec with rigid message group ID contention.",
+    "Pay-Per-Request OpEx: Every polling check and diagnostic API call incurs metered AWS billing costs."
+], border_color=CARD_BORDER, title_color=ACCENT_PURPLE)
+
+# ==============================================================================
+# SLIDE 12: Full-Stack Technology Rationale: React 18, MongoDB 7.0 & Java 21 LTS
+# ==============================================================================
+slide12 = prs.slides.add_slide(blank_layout)
+apply_background(slide12)
+add_header(slide12, "Full-Stack Technology Rationale: React 18, MongoDB 7.0 & Java 21", category="FULL-STACK ARCHITECTURE")
+
+add_card(slide12, 0.8, 1.8, 3.6, 5.0, "React 18 + Vite SPA", [
+    "Retires 98 JSPs & Swing: Replaces legacy server-side JSPs and 2002 Java desktop GUI (petstoreadmin.ear).",
+    "Sub-Second Vite HMR: Hot Module Replacement gives instant developer feedback vs 45s Ant/TomEE EAR redeploys.",
+    "Multi-Persona Routing: Single cohesive SPA bundles Storefront, Admin Analytics, Supplier Portal, and Parity HUD.",
+    "Virtual DOM & Reactivity: Seamless real-time state synchronization with backend REST/Kafka APIs without DOM flicker.",
+    "Component Reusability: Modular React component tree ensures consistent UI patterns across all persona dashboards."
+], border_color=ACCENT_BLUE, title_color=ACCENT_BLUE)
+
+add_card(slide12, 4.8, 1.8, 3.6, 5.0, "MongoDB 7.0 Aggregates", [
+    "18 Tables -> 4 Aggregates: Eliminates 7-way relational SQL joins (USER, CUSTOMER, ACCOUNT, PROFILE, etc.).",
+    "Single-Document Atomicity: Orders and users retrieved in a single indexed read without relational impedance mismatch.",
+    "Schema Agility: Allows dynamic pet attributes and supplier tiers without blocking multi-table DDL schema locks.",
+    "Production Replica Set ('rs0'): Native high availability, automated primary election, and change streams.",
+    "Sub-Millisecond Read Latency: Memory-mapped WiredTiger storage engine delivers blazing fast catalog lookups."
+], border_color=ACCENT_GREEN, title_color=ACCENT_GREEN)
+
+add_card(slide12, 8.8, 1.8, 3.6, 5.0, "Spring Boot 3.3 + Java 21 LTS", [
+    "Project Loom Virtual Threads: High-throughput lightweight concurrency handles thousands of concurrent requests.",
+    "EJB 2.0 Elimination: Replaces 32 cumbersome EJB home/remote interfaces with clean POJOs and constructor DI.",
+    "Modern Cloud Framework: Native Kafka template, Spring Data MongoDB, and Actuator observability out-of-the-box.",
+    "Long-Term Support: Java 21 LTS provides modern pattern matching, records, and GraalVM native image readiness.",
+    "Rapid Production Boot: Starts in ~2.8 seconds compared to 45 seconds for legacy TomEE J2EE container."
+], border_color=ACCENT_PURPLE, title_color=ACCENT_PURPLE)
+
+# ==============================================================================
+# SLIDE 13: Engineering Rigor: Google Style Guide Compliance & Quality Gates
+# ==============================================================================
+slide13 = prs.slides.add_slide(blank_layout)
+apply_background(slide13)
+add_header(slide13, "Engineering Rigor: Google Style Guide Compliance & Quality Gates", category="ENGINEERING EXCELLENCE")
+
+add_card(slide13, 0.8, 1.8, 5.6, 5.0, "Google Java Style Compliance", [
+    "Strict 2-Space Indentation: Standard Google Java formatting enforced across all 4 Spring Boot microservices.",
+    "Zero Wildcard Imports: Every single import is explicit (0 'import .*' occurrences across entire repository).",
+    "Google Naming Conventions: UpperCamelCase classes, lowerCamelCase methods/variables, CONSTANT_CASE enums.",
+    "Exhaustive Javadoc: Full documentation on domain entities, DTOs, Kafka consumers, and REST controllers.",
+    "100% Test Pass Rate: All 34 Maven unit tests pass cleanly with 0 failures, 0 errors, and 0 skipped.",
+    "Clean Reactor Build: Multi-module Maven reactor compiles deterministically across common, catalog, order, and migration."
+], border_color=ACCENT_BLUE, title_color=ACCENT_BLUE)
+
+add_card(slide13, 6.8, 1.8, 5.6, 5.0, "Google TypeScript / JS & Automated Quality", [
+    "Strict TypeScript: 100% type-annotated codebase with strict compiler options and zero untyped 'any'.",
+    "Oxlint Zero Warnings: Rust-powered linter passes with 0 warnings and 0 errors across all 46 frontend files.",
+    "Lightning Production Build: 'tsc -b && vite build' compiles production bundle in 1.09s without warnings.",
+    "100.0% Data Parity Score: Automated ShadowReadComparator verifies 704 data points between legacy and modern.",
+    "Chaos Failure Tested: Secondary outage injection proves zero blast radius on legacy and automated self-healing.",
+    "Clean Architecture: Modular separation of services, domain models, custom hooks, and route-level code splitting."
+], border_color=ACCENT_GREEN, title_color=ACCENT_GREEN)
+
+# ==============================================================================
+# SLIDE 14: Top Interview Questions: Architecture & Data Integrity
+# ==============================================================================
+slide14 = prs.slides.add_slide(blank_layout)
+apply_background(slide14)
+add_header(slide14, "Architectural Interview Deep Dive: Dual-Write & ACID", category="SYSTEM DESIGN INTERVIEW PREPARATION")
+
+add_card(slide14, 0.8, 1.8, 5.6, 5.0, "Q1: Why Dual-Write over CDC / Debezium?", [
     "Q: Why not use Change Data Capture (CDC) like Debezium on the legacy DB?",
     "A: Legacy datastore is Cloudscape/HSQLDB, which lacks native write-ahead log (WAL) replication APIs.",
-    "A: Application-level dual-write gives full control over domain event modeling (Event-Carried State Transfer).",
+    "A: Application-level event sourcing gives full control over domain event modeling (Event-Carried State Transfer).",
     "A: Isolates legacy from CDC agent overhead and avoids complex schema mapping inside connector."
 ], border_color=ACCENT_BLUE, title_color=ACCENT_BLUE)
 
-add_card(slide10, 6.8, 1.8, 5.6, 5.0, "Q2: How is ACID Integrity Preserved?", [
+add_card(slide14, 6.8, 1.8, 5.6, 5.0, "Q2: How is ACID Integrity Preserved?", [
     "Q: How do you avoid distributed 2-Phase Commit (2PC) bottlenecks?",
     "A: Microservices use Eventual Consistency via the Outbox / Dual-Write Pattern.",
     "A: Primary write to local datastore succeeds first; events are published to Kafka with acks=all.",
@@ -322,13 +432,13 @@ add_card(slide10, 6.8, 1.8, 5.6, 5.0, "Q2: How is ACID Integrity Preserved?", [
 ], border_color=ACCENT_PURPLE, title_color=ACCENT_PURPLE)
 
 # ==============================================================================
-# SLIDE 11: Top Interview Questions: Rollback & Split-Brain
+# SLIDE 15: Top Interview Questions: Rollback & Split-Brain
 # ==============================================================================
-slide11 = prs.slides.add_slide(blank_layout)
-apply_background(slide11)
-add_header(slide11, "Architectural Interview Deep Dive: Rollback & Split-Brain", category="SYSTEM DESIGN INTERVIEW PREPARATION")
+slide15 = prs.slides.add_slide(blank_layout)
+apply_background(slide15)
+add_header(slide15, "Architectural Interview Deep Dive: Rollback & Split-Brain", category="SYSTEM DESIGN INTERVIEW PREPARATION")
 
-add_card(slide11, 0.8, 1.8, 5.6, 5.0, "Q3: How to Handle Modern Data on Rollback?", [
+add_card(slide15, 0.8, 1.8, 5.6, 5.0, "Q3: How to Handle Modern Data on Rollback?", [
     "Q: If we roll back to legacy, what happens to users created in the modern app?",
     "A: Modern app publishes self-contained UserDomainEvent to Kafka with full credentials & address.",
     "A: Kafka commit log retains all events from offset 0.",
@@ -336,7 +446,7 @@ add_card(slide11, 0.8, 1.8, 5.6, 5.0, "Q3: How to Handle Modern Data on Rollback
     "A: New users can log into legacy immediately without password reset."
 ], border_color=ACCENT_ORANGE, title_color=ACCENT_ORANGE)
 
-add_card(slide11, 6.8, 1.8, 5.6, 5.0, "Q4: Preventing Split-Brain Scenarios", [
+add_card(slide15, 6.8, 1.8, 5.6, 5.0, "Q4: Preventing Split-Brain Scenarios", [
     "Q: What if legacy and modern both accept writes to the same order or inventory?",
     "A: Single Source of Truth Rule: During Canary/Strangler phases, only one system is designated write-authoritative per entity.",
     "A: Orders & Users: modern system is write-primary; legacy is frozen / read-only.",
@@ -344,13 +454,13 @@ add_card(slide11, 6.8, 1.8, 5.6, 5.0, "Q4: Preventing Split-Brain Scenarios", [
 ], border_color=ACCENT_GREEN, title_color=ACCENT_GREEN)
 
 # ==============================================================================
-# SLIDE 12: Production Cutover Checklist & Final Status
+# SLIDE 16: Production Cutover Checklist & Final Status
 # ==============================================================================
-slide12 = prs.slides.add_slide(blank_layout)
-apply_background(slide12)
-add_header(slide12, "Production Operational Status & Cutover Readiness")
+slide16 = prs.slides.add_slide(blank_layout)
+apply_background(slide16)
+add_header(slide16, "Production Operational Status & Cutover Readiness")
 
-add_card(slide12, 0.8, 1.8, 5.6, 5.0, "Verified Service Grid", [
+add_card(slide16, 0.8, 1.8, 5.6, 5.0, "Verified Service Grid", [
     "Modern Storefront (port 3000): HTTP 200 OK.",
     "Catalog Service (port 8081): 5 Categories, 16 Products.",
     "Order Service (port 8082): Registration, Login, Orders, Sales Analytics.",
@@ -360,11 +470,12 @@ add_card(slide12, 0.8, 1.8, 5.6, 5.0, "Verified Service Grid", [
     "Legacy TomEE Container (port 8000): Verified healthy & isolated."
 ], border_color=ACCENT_BLUE, title_color=ACCENT_BLUE)
 
-add_card(slide12, 6.8, 1.8, 5.6, 5.0, "Cutover Criteria Achieved", [
+add_card(slide16, 6.8, 1.8, 5.6, 5.0, "Cutover Criteria Achieved", [
     "Data Fidelity: 100.0% Parity across 704 automated comparisons.",
     "Data Drifts: 0 discrepancies detected.",
     "Resilience: Chaos experiment proven with 0 downtime on legacy.",
     "Regression: 100% frozen legacy baseline in petstore-legacy/.",
+    "Code Quality: 100% Google Style Guide compliance in Java and TypeScript.",
     "Documentation: Full 6-page GitHub Wiki suite synchronized.",
     "Status: System is fully validated and ready for production cutover."
 ], border_color=ACCENT_GREEN, title_color=ACCENT_GREEN)
@@ -373,3 +484,4 @@ add_card(slide12, 6.8, 1.8, 5.6, 5.0, "Cutover Criteria Achieved", [
 out_path = os.path.join(OUTPUT_DIR, "petstore_modernization_showcase.pptx")
 prs.save(out_path)
 print(f"Presentation saved successfully to: {out_path}")
+

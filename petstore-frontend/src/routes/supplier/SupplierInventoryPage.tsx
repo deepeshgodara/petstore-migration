@@ -51,7 +51,30 @@ export const SupplierInventoryPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchInventory();
+    let active = true;
+    supplierService
+      .getAllItems()
+      .then((data) => {
+        if (!active) return;
+        setItems(data);
+        const initialDrafts: Record<string, number> = {};
+        data.forEach((item) => {
+          initialDrafts[item.itemId] = item.inventoryQuantity;
+        });
+        setDraftQuantities(initialDrafts);
+      })
+      .catch((err: unknown) => {
+        if (!active) return;
+        console.error('Failed to fetch inventory items', err);
+        const msg = err instanceof Error ? err.message : 'Error fetching inventory';
+        setToastMessage({ type: 'error', text: msg });
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleQuantityChange = (itemId: string, newQty: number) => {
