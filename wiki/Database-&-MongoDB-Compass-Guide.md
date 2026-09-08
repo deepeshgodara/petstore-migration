@@ -38,13 +38,15 @@ If MongoDB Compass is installed in `/Applications` on macOS, this script will la
 The `petstore` database contains two primary document collections:
 
 ### 2.1 Collection: `petstore_orders`
-- **Document Aggregate Root**: Purchase orders with embedded customer snapshots, addresses, payments, and line items.
+- **Document Aggregate Root**: Purchase orders with embedded customer snapshots, addresses, payments, line items, and optimistic locking `@Version`.
+- **Currency Typing**: Currency fields (`totalPrice`, line item `unitPrice`, `totalCost`) are strictly typed as BSON `Decimal128` (IEEE 754-2008) via `MongoCustomConversions` to avoid floating point errors and String conversion overhead.
 - **Indexes**:
   | Index Name | Keys | Type | Purpose |
   | :--- | :--- | :--- | :--- |
   | `_id_` | `{ _id: 1 }` | Unique | Primary key lookup by Order ID |
   | `userId_orderDate_idx` | `{ userId: 1, orderDate: -1 }` | Compound | Fast retrieval of a customer's order history |
   | `status_orderDate_idx` | `{ status: 1, orderDate: -1 }` | Compound | Powers Admin approval queue (`status: PENDING`) |
+  | `totalPrice_idx` | `{ totalPrice: 1 }` | Single Field | Index-backed price range filters and numeric aggregations |
 
 ### 2.2 Collection: `petstore_products`
 - **Document Aggregate Root**: Product catalog with embedded child `items` (inventory SKUs) and multilingual localization maps.
@@ -54,10 +56,43 @@ The `petstore` database contains two primary document collections:
   | `_id_` | `{ _id: 1 }` | Unique | Primary key lookup by Product ID (e.g. `FI-SW-01`) |
   | `categoryId_idx` | `{ categoryId: 1 }` | Single Field | Storefront category filtering (`FISH`, `DOGS`, etc.) |
   | `items_itemId_idx` | `{ 'items.itemId': 1 }` | Multikey | Instant SKU lookup for checkout and supplier inventory |
+  | `multilingual_text_idx` | `{ 'names.en_US': 'text', 'names.ja_JP': 'text', 'names.zh_CN': 'text' }` | Text | Cross-lingual full-text search without collection scans |
+
+### 2.3 Collection: `petstore_users`
+- **Document Aggregate Root**: Unified customer, profile, address, and credential document. Passwords are cryptographically salted and hashed using BCrypt.
+- **Indexes**:
+  | Index Name | Keys | Type | Purpose |
+  | :--- | :--- | :--- | :--- |
+  | `_id_` | `{ _id: 1 }` | Unique | Primary key lookup by Username |
+  | `email_idx` | `{ email: 1 }` | Single Field | Rapid email lookup and duplicate checks |
+  | `role_idx` | `{ role: 1 }` | Single Field | Filtering by administrative persona (`ROLE_ADMIN`, `ROLE_CUSTOMER`) |
+
+### 2.4 Collection: `petstore_outbox`
+- **Document Aggregate Root**: Transactional Outbox pattern events. Persisted atomically in the same multi-document transaction as orders to guarantee zero message loss during broker downtime.
+- **Indexes**:
+  | Index Name | Keys | Type | Purpose |
+  | :--- | :--- | :--- | :--- |
+  | `_id_` | `{ _id: 1 }` | Unique | Event UUID |
+  | `status_createdAt_idx` | `{ status: 1, createdAt: 1 }` | Compound | High-throughput sequential relay polling by `OutboxRelayScheduler` |
 
 ---
 
-## 3. Analytical Query Presets for MongoDB Compass
+## 3. Automated Startup Index Enforcement (`DatabaseIndexInitializer`)
+
+In Spring Boot 3.3, `spring.data.mongodb.auto-index-creation` defaults to `false`. To eliminate runtime index drift, the system implements an enterprise `DatabaseIndexInitializer` listening to `ApplicationReadyEvent`.
+
+On application startup, `DatabaseIndexInitializer` connects to MongoDB and programmatically verifies and materializes all compound, numeric, and full-text indexes before incoming traffic arrives.
+
+---
+
+## 4. Money Typing: BSON Decimal128 (IEEE 754-2008)
+
+To prevent the classic Spring Data MongoDB gotcha where `BigDecimal` serializes to a BSON `string`, the platform registers custom converters in `MongoConfig.java`:
+- `BigDecimalToDecimal128Converter`: Converts `java.math.BigDecimal` to `org.bson.types.Decimal128`.
+- `Decimal128ToBigDecimalConverter`: Converts `org.bson.types.Decimal128` back to `BigDecimal`.
+- `StringToBigDecimalConverter`: Provides fallback deserialization for legacy records.
+
+A backfill script (`scripts/backfill_decimal128.js`) converted all existing records in MongoDB, allowing native index-backed sorting and range aggregations.
 
 Open MongoDB Compass, select the `petstore` database, and use these pre-built queries in the **Filter** or **Aggregations** tabs:
 

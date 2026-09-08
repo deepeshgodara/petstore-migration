@@ -116,6 +116,8 @@ This playbook provides actionable, step-by-step operational instructions for on-
   ```bash
   docker exec petstore-kafka /usr/bin/kafka-topics --bootstrap-server localhost:9092 --list
   ```
+- **Outbox Resilience**:
+  Customer checkout is protected by the **Transactional Outbox Pattern**. While Kafka is down, `petstore-order-service` continues processing checkout orders atomically within MongoDB replica set `rs0`, persisting outbound event payloads to `petstore_outbox` with `status: 'PENDING'`. Customer orders are never dropped.
 - **Recovery Procedure**:
   ```bash
   docker restart petstore-kafka
@@ -123,6 +125,8 @@ This playbook provides actionable, step-by-step operational instructions for on-
   docker exec petstore-kafka /usr/bin/kafka-topics --bootstrap-server localhost:9092 \
     --create --if-not-exists --topic petstore.orders.dualwrite --partitions 3 --replication-factor 1
   ```
+  Once Kafka is back online, `OutboxRelayScheduler` automatically drains pending outbox records and dispatches them in order.
+
 
 ---
 

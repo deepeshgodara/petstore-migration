@@ -27,34 +27,49 @@ This document defines the interface specifications, runtime configurations, netw
 
 ## 2. `petstore-order-service` (Port 8082)
 
-- **Description**: Manages customer checkout, order lifecycle transitions (`PENDING`, `APPROVED`, `COMPLETED`, `DENIED`, `CANCELLED`), asynchronous dual-write publishing, and administrative analytics.
+- **Description**: Manages customer checkout, user account registration & BCrypt authentication, order lifecycle transitions (`PENDING`, `APPROVED`, `COMPLETED`, `DENIED`, `CANCELLED`), transactional outbox relay publishing, and administrative analytics.
 - **Runtime**: Java 21 LTS, Spring Boot 3.3.3.
 - **Configuration**: `petstore-modern/petstore-order-service/src/main/resources/application.yml`
-- **Database Binding**: MongoDB 7.0 (`mongodb://localhost:27017/petstore?replicaSet=rs0`), Collection: `petstore_orders`
+- **Database Binding**: MongoDB 7.0 (`mongodb://localhost:27017/petstore?replicaSet=rs0`), Collections: `petstore_orders`, `petstore_outbox`, `petstore_users`
+- **Key Architectural Features**:
+  - **Multi-Document ACID Transactions**: Backed by `MongoTransactionManager` on replica set `rs0`.
+  - **Optimistic Concurrency Control**: `@Version private Long version;` on `OrderDocument` preventing race conditions via CAS.
+  - **Transactional Outbox Relay**: `OutboxRelayScheduler` polls `petstore_outbox` every 500ms and guarantees zero-data-loss publishing to Kafka.
+  - **Dynamic Feature Toggle**: `migration.dualwrite.enabled` kill switch controllable at runtime via Spring Actuator `/actuator/refresh`.
+  - **Password Security**: Salted `BCryptPasswordEncoder` with lazy upgrade on legacy user login.
 - **Kafka Integration**: Producer to `petstore.orders.created`, `petstore.orders.approved`, `petstore.orders.completed`, `petstore.orders.dualwrite`.
 
 ### REST Endpoints
 | Method | Path | Description | Access |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/orders` | Place customer purchase order (ACID document persist + Kafka dual-write) | Public / Customer |
+| `POST` | `/api/v1/orders` | Place customer purchase order (ACID document + outbox persist) | Public / Customer |
 | `GET` | `/api/v1/orders/{orderId}` | Retrieve order document by ID | Customer / Admin |
 | `GET` | `/api/v1/orders?userId={user}&status={st}` | Query orders filtered by user ID or lifecycle status | Customer / Admin |
 | `PUT` / `PATCH` | `/api/v1/orders/{orderId}/status` | Transition order status (`APPROVED`, `COMPLETED`, `DENIED`) | `ROLE_ADMIN` |
 | `GET` | `/api/v1/orders/admin/summary` | Aggregate order count, revenue, and status breakdown | `ROLE_ADMIN` |
 | `GET` | `/api/v1/orders/admin/analytics` | Category sales metrics, unique/returning customer counts, AOV | `ROLE_ADMIN` |
+| `POST` | `/api/v1/users/register` | Register new customer account with BCrypt password hashing | Public |
+| `POST` | `/api/v1/users/login` | Authenticate user with legacy plain/SHA-1 validation & lazy BCrypt upgrade | Public |
+| `GET` | `/api/v1/users/{username}` | Retrieve user profile details by username | Customer / Admin |
+| `GET` | `/api/v1/users` | List registered customer profiles | `ROLE_ADMIN` |
 | `GET` | `/actuator/health` | Service health status and MongoDB replica ping | Internal / Ops |
+| `POST` | `/actuator/refresh` | Dynamically refresh runtime configurations (e.g. dual-write kill switch) | Internal / Ops |
 
 ---
 
 ## 3. `petstore-migration-service` (Port 8085)
 
-- **Description**: Historical data migration worker, dual-write asynchronous consumer, shadow read reconciler, and live MongoDB engine telemetry provider.
+- **Description**: Historical data migration worker, dual-write asynchronous consumer, reverse write-back consumer for live legacy sync, shadow read reconciler, and live MongoDB engine telemetry provider.
 - **Runtime**: Java 21 LTS, Spring Boot 3.3.3.
 - **Configuration**: `petstore-modern/petstore-migration-service/src/main/resources/application.yml`
 - **Database Bindings**:
   - Legacy HSQLDB via JDBC: `jdbc:hsqldb:hsql://localhost:9001/petstore` (Container: `petstore-baseline`)
   - Target MongoDB 7.0: `mongodb://localhost:27017/petstore?replicaSet=rs0`
-- **Kafka Integration**: Consumer for `petstore.orders.dualwrite`, Producer to `petstore.orders.dlq`.
+- **Key Architectural Features**:
+  - **O(1) In-Memory Shadow Reconciliation**: `ShadowReadComparator` pre-indexes MongoDB documents into hash maps for lightning-fast audit scans.
+  - **Reverse Write-Back Synchronization**: `LegacyWriteBackConsumer` listens to `petstore.orders.created` and mirrors modern orders into legacy HSQLDB for zero-downtime rollback safety.
+  - **BCrypt Credential Parity**: Recognizes BCrypt hashed passwords and performs cryptographic match verification against legacy credentials.
+- **Kafka Integration**: Consumer for `petstore.orders.dualwrite`, Consumer for `petstore.orders.created` (Legacy write-back), Producer to `petstore.orders.dlq`.
 
 ### REST Endpoints
 | Method | Path | Description | Access |

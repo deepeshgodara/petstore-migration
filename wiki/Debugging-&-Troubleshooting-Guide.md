@@ -110,3 +110,50 @@ docker exec petstore-mongo mongosh --quiet --eval "JSON.stringify(db.getSiblingD
 # Run Java JDBC query against HSQLDB:
 ./scripts/query_legacy_db.sh
 ```
+
+---
+
+## 6. Inspecting the Transactional Outbox Queue
+
+If Kafka events appear delayed or missing, verify the state of `petstore_outbox`:
+
+```bash
+# Count pending outbox events awaiting relay:
+docker exec petstore-mongo mongosh --quiet --eval \
+  "db.getSiblingDB('petstore').petstore_outbox.countDocuments({ status: 'PENDING' })"
+
+# Inspect failed or retrying outbox events:
+docker exec petstore-mongo mongosh --quiet --eval \
+  "db.getSiblingDB('petstore').petstore_outbox.find({ retryCount: { \$gt: 0 } }).limit(5).pretty()"
+```
+
+If `status: 'PENDING'` count is growing and not clearing:
+1. Verify `petstore-order-service` is running (`lsof -i :8082`).
+2. Verify Kafka broker connectivity (`docker logs petstore-kafka`).
+3. The `OutboxRelayScheduler` polls every 500ms and marks successfully dispatched messages as `status: 'PROCESSED'`.
+
+---
+
+## 7. Handling Concurrency Conflicts (`OptimisticLockingFailureException`)
+
+`OrderDocument` utilizes `@Version private Long version;` for optimistic locking. If concurrent requests attempt to update the same order (e.g. an admin approval racing with a customer cancellation):
+1. The second write will fail with `org.springframework.dao.OptimisticLockingFailureException`.
+2. The client receives an HTTP 409 Conflict or 500 status depending on retry logic.
+3. **Resolution**: Refresh the document from MongoDB (`GET /api/v1/orders/{id}`) to obtain the current `version` before reapplying mutations.
+
+---
+
+## 8. Dual-Write Kill Switch Emergency Toggle
+
+If high load or legacy database degradation occurs, operations can pause dual-write traffic instantly without downtime:
+
+```bash
+# 1. Update application config or environment variable:
+# MIGRATION_DUALWRITE_ENABLED=false
+
+# 2. Trigger Spring Boot Actuator refresh:
+curl -X POST http://localhost:8082/actuator/refresh
+```
+
+To resume dual-write, set `migration.dualwrite.enabled=true` and re-post to `/actuator/refresh`.
+

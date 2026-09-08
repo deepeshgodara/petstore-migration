@@ -22,8 +22,8 @@ flowchart TB
 
     subgraph MicroservicesTier["Modern Microservices Tier (Java 21 LTS / Spring Boot 3.3 / Project Loom)"]
         CATALOG["petstore-catalog-service<br/>Port: 8081<br/>Multilingual Catalog & Warehouse Stock"]
-        ORDER["petstore-order-service<br/>Port: 8082<br/>Checkout & Order Approval Lifecycle"]
-        MIGRATION["petstore-migration-service<br/>Port: 8085<br/>Dual-Write Consumer, DLQ & Parity Auditor"]
+        ORDER["petstore-order-service<br/>Port: 8082<br/>Checkout, @Version Concurrency & Outbox Relay"]
+        MIGRATION["petstore-migration-service<br/>Port: 8085<br/>Dual-Write Consumer, Reverse Write-Back & O(1) Reconciler"]
     end
 
     subgraph StreamingTier["Distributed Event Streaming Mesh (Apache Kafka 3.7+ KRaft)"]
@@ -39,14 +39,16 @@ flowchart TB
 
     subgraph PersistenceTier["Modern Persistence Tier (Document Datastore)"]
         MONGO[("MongoDB 7.0 Community (Replica Set rs0)<br/>Port: 27017")]
-        C_ORDERS[("Collection: petstore_orders")]
-        C_PRODUCTS[("Collection: petstore_products")]
-        C_CATEGORIES[("Collection: categories")]
+        C_ORDERS[("Collection: petstore_orders<br/>(Decimal128 & @Version)")]
+        C_OUTBOX[("Collection: petstore_outbox<br/>(Transactional Outbox)")]
+        C_PRODUCTS[("Collection: petstore_products<br/>(Full-Text Multilingual Index)")]
+        C_USERS[("Collection: petstore_users<br/>(BCrypt Salted Hashes)")]
         C_PARITY[("Collection: parity_audits")]
 
         MONGO --- C_ORDERS
+        MONGO --- C_OUTBOX
         MONGO --- C_PRODUCTS
-        MONGO --- C_CATEGORIES
+        MONGO --- C_USERS
         MONGO --- C_PARITY
     end
 
@@ -264,11 +266,12 @@ flowchart TB
 
     subgraph BackendServices["Spring Boot Microservices Tier"]
         S1["6.0 Catalog Aggregation Service (:8081)"]
-        S2["7.0 Order Processing & Lifecycle (:8082)"]
-        S3["8.0 Dual-Write Publisher (:8082)"]
+        S2["7.0 Order Processing & @Version Concurrency (:8082)"]
+        S3["8.0 Transactional Outbox Relay Scheduler (:8082)"]
         S4["9.0 Dual-Write Consumer (:8085)"]
-        S5["10.0 Shadow Reconciliation Auditor (:8085)"]
+        S5["10.0 Shadow Reconciliation Auditor O(1) (:8085)"]
         S6["11.0 Live Database Diagnostics (:8085)"]
+        S7["12.0 Legacy Reverse Write-Back Consumer (:8085)"]
     end
 
     subgraph EventStreaming["Apache Kafka KRaft Event Mesh"]
@@ -278,7 +281,7 @@ flowchart TB
     end
 
     subgraph Persistence["Datastore Tier"]
-        DB_MONGO[("MongoDB rs0 (petstore_orders, petstore_products)")]
+        DB_MONGO[("MongoDB rs0 (petstore_orders, petstore_products, petstore_outbox, petstore_users)")]
         DB_LEGACY[("Legacy Relational DB (petstoredb)")]
     end
 
@@ -289,17 +292,19 @@ flowchart TB
 
     Shopper -->|"Submit Order"| F1
     F1 -->|"POST /api/v1/orders"| S2
-    S2 -->|"Save OrderDocument"| DB_MONGO
-    S2 -->|"Emit Dual-Write Event"| S3
-    S3 -->|"Publish Event"| Q_DW
+    S2 -->|"Atomic @Transactional Save (Order + Outbox)"| DB_MONGO
+    S3 -->|"Poll Pending Outbox & Dispatch"| Q_DW
 
     Q_DW -->|"Subscribe & Consume"| S4
     S4 -->|"Async Mirror Document"| DB_MONGO
     S4 -.->|"Transient Failure / Error"| Q_DLQ
 
+    Q_DW -->|"Optional Reverse Rollback"| S7
+    S7 -.->|"Reverse SQL Replay"| DB_LEGACY
+
     Admin -->|"Review & Approve"| F3
     F3 -->|"PUT /api/v1/orders/:id/status"| S2
-    S2 -->|"Update Status (APPROVED)"| DB_MONGO
+    S2 -->|"Atomic Status Update (@Version CAS)"| DB_MONGO
     S2 -->|"Emit Event"| Q_APP
 
     Supplier -->|"Manage Warehouse Stock"| F4

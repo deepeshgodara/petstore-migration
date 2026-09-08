@@ -23,14 +23,16 @@ An enterprise-grade, non-destructive architectural modernization of the iconic *
    - [Option B: Step-by-Step Manual Startup](#option-b-step-by-step-manual-startup)
 6. [Pre-Configured Demo Credentials & Role Access](#pre-configured-demo-credentials--role-access)
 7. [Key Modern Application Features](#key-modern-application-features)
-8. [How to Run the Legacy Baseline](#how-to-run-the-legacy-baseline)
+8. [Enterprise Production Hardening & Gotcha Remediation](#enterprise-production-hardening--gotcha-remediation)
+9. [How to Run the Legacy Baseline](#how-to-run-the-legacy-baseline)
    - [Option A: Native Java 21 Simulation Runner](#option-a-native-java-21-simulation-runner)
    - [Option B: Authentic 2002 Apache TomEE Container](#option-b-authentic-2002-apache-tomee-container)
    - [Legacy Swing Administration Client](#legacy-swing-administration-client)
-9. [Automated Verification & Playback Suites](#automated-verification--playback-suites)
-10. [Documentation & Knowledge Base](#documentation--knowledge-base)
+10. [Automated Verification & Playback Suites](#automated-verification--playback-suites)
+11. [Documentation & Knowledge Base](#documentation--knowledge-base)
 
 ---
+
 
 ## 🎯 Architectural Highlights & Guarantees
 
@@ -337,6 +339,23 @@ The modern platform uses Role-Based Access Control (RBAC). The login modal inclu
 
 ---
 
+## 🛡️ Enterprise Production Hardening & Gotcha Remediation
+
+In addition to the baseline strangler-fig migration, the platform has undergone rigorous production hardening to resolve subtle distributed systems, database, and security edge cases:
+
+| Hardening Area | Gotcha / Trade-Off | Remediation & Implementation | Status |
+| :--- | :--- | :--- | :--- |
+| **Data Integrity & Event Delivery** | Direct Kafka send: broker failure drops events with no recovery | **Transactional Outbox Pattern**: Order mutations and outbox records commit in a single multi-document `@Transactional` boundary; background `OutboxRelayScheduler` polls `petstore_outbox` every 500ms and guarantees at-least-once delivery | ✅ RESOLVED |
+| **Concurrency & ACID** | No optimistic locking: concurrent status writes clobber each other | **@Version Optimistic Locking & Multi-Doc ACID**: Added `@Version private Long version;` with CAS protection on `OrderDocument`; wired `MongoTransactionManager` on replica set `rs0` | ✅ RESOLVED |
+| **Financial Accuracy** | `BigDecimal` persists as BSON string: no index-backed sorting or range queries | **BSON Decimal128 (IEEE 754-2008)**: Custom `MongoCustomConversions` converters registered in `MongoConfig`; executed `scripts/backfill_decimal128.js` to backfill existing data | ✅ RESOLVED |
+| **Index Governance** | `auto-index-creation: false` creates index drift between code & DB | **Automated Startup Initializer**: `DatabaseIndexInitializer` listens to `ApplicationReadyEvent` and programmatically verifies/creates compound and multilingual text indexes | ✅ RESOLVED |
+| **Rollback Safety** | Legacy database opened read-only: no reverse sync on post-cutover rollback | **Reverse Write-Back Synchronization**: `LegacyWriteBackConsumer` listens to `petstore.orders.created` and replays orders into legacy HSQLDB relational tables | ✅ RESOLVED |
+| **Security & Passwords** | Legacy plain-text passwords and blank password auth bypass | **Salted BCrypt & Lazy Migration**: Prevented blank password bypass; integrated `BCryptPasswordEncoder` (work factor 10) with lazy upgrade on legacy user login | ✅ RESOLVED |
+| **Audit Performance** | Reconciler executed $O(N^2)$ nested scans across records | **O(1) Pre-Indexed Shadow Reconciliation**: `ShadowReadComparator` pre-indexes target documents into in-memory hash maps, enabling instant audits across large datasets | ✅ RESOLVED |
+| **Operational Control** | Dual-write could not be paused without restarting services | **Dynamic Dual-Write Kill Switch**: `migration.dualwrite.enabled` controllable at runtime via Spring Boot Actuator `/actuator/refresh` | ✅ RESOLVED |
+
+---
+
 ## 🏛️ How to Run the Legacy Baseline
 
 The repository provides two independent options to run the legacy baseline for historical comparison:
@@ -417,9 +436,9 @@ Executes all verification suites sequentially with automated assertion reporting
 ```bash
 cd petstore-modern
 export JAVA_HOME="/Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home"
-mvn clean test -pl petstore-catalog-service,petstore-order-service,petstore-migration-service
+mvn clean test -pl petstore-common,petstore-catalog-service,petstore-order-service,petstore-migration-service
 ```
-- **76 unit & integration tests** across all microservices.
+- **90 unit & integration tests** across 26 classes.
 - **100% test pass rate with 0 failures and 0 errors**.
 
 ### Running Frontend Build & Typecheck

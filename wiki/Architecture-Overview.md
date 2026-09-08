@@ -70,35 +70,53 @@ Rather than executing a risky "Big Bang" offline migration, the platform preserv
                                      ▼
                         [petstore-order-service]
                                      │
-                 ┌───────────────────┴───────────────────┐
-                 ▼ (Primary Transaction)                 ▼ (Asynchronous Dual-Write)
-      [MongoDB Replica Set rs0]                 Kafka Topic: petstore.orders.dualwrite
-                 │                                       │
-                 │                                       ▼
-                 │                         [DualWriteConsumer (Migration Service)]
-                 │                                       │
-                 │                                       ▼
-                 │                             [Legacy HSQLDB / TomEE]
-                 │                                       │
-                 └──────────────┐        ┌───────────────┘
-                                ▼        ▼
-                          [ShadowReadComparator]
-                                     │
-                     ┌───────────────┴───────────────┐
-                     ▼                               ▼
-             Match (100% Parity)            Drift Detected
-                     │                               │
-            Increments Metric                Logs Discrepancy &
-          totalMatches in /ops               Triggers Idempotent Upsert
+                    ┌────────────────┴────────────────┐
+                    ▼ (Atomic @Transactional Unit)    ▼
+         [MongoDB Replica Set rs0]        [petstore_outbox]
+         - petstore_orders (@Version)     - Event UUID
+         - petstore_users (BCrypt)        - Payload & Status: PENDING
+                                                      │
+                                                      ▼ (Polled every 500ms)
+                                           [OutboxRelayScheduler]
+                                                      │
+                                                      ▼
+                                   Kafka Topic: petstore.orders.dualwrite
+                                                      │
+                                                      ▼
+                                    [petstore-migration-service]
+                                     ┌────────────────┴────────────────┐
+                                     ▼                                 ▼
+                          [DualWriteConsumer]             [LegacyWriteBackConsumer]
+                                     │                                 │
+                          (Mirrors to MongoDB)             (Replays SQL to HSQLDB)
+                                     │                                 │
+                                     └──────────────┬──────────────────┘
+                                                    │
+                                                    ▼
+                                          [ShadowReadComparator]
+                                            (O(1) Map Pre-Indexing)
+                                                    │
+                                    ┌───────────────┴───────────────┐
+                                    ▼                               ▼
+                            Match (100% Parity)            Drift Detected
+                                    │                               │
+                           Increments Metric                Logs Discrepancy &
+                         totalMatches in /ops               Triggers Idempotent Upsert
 ```
 
-### Key Safety Mechanisms:
-1. **Asynchronous Decoupling**: Secondary datastore writes run asynchronously via Kafka. If MongoDB or the legacy database experiences latency or an outage, customer transactions are never blocked.
-2. **Dead-Letter Queue (DLQ)**: If a write fails permanently after retries, it routes to `petstore.orders.dlq` for SRE inspection and replay.
-3. **Idempotency**: All MongoDB writes use deterministic IDs (`_id: orderId`). Replayed dual-write events result in safe idempotent upserts.
+### Key Safety & Production Hardening Mechanisms:
+1. **Transactional Outbox Pattern**: Order mutations and outbound event notifications are persisted atomically in a single multi-document `@Transactional` boundary inside MongoDB replica set `rs0` (`petstore_orders` and `petstore_outbox`). The background `OutboxRelayScheduler` polls pending events and reliably relays them to Kafka. Even if Kafka is temporarily offline, customer orders are never lost or blocked.
+2. **Optimistic Concurrency Control (`@Version`)**: `OrderDocument` is protected by `@Version private Long version;`. Any concurrent state change (e.g., simultaneous customer cancellation and admin approval) is detected and resolved safely via Compare-And-Swap (CAS), preventing lost updates without costly table locks.
+3. **Multi-Document ACID Transactions**: Configured via `MongoTransactionManager` bound to replica set `rs0`. Mutations across orders and outbox collections commit or roll back atomically.
+4. **BSON Decimal128 Monetary Precision**: All monetary values (`totalPrice`, `unitCost`, `listPrice`) use `java.math.BigDecimal` mapped to BSON `Decimal128` (IEEE 754-2008) via `MongoConfig` custom converters, preventing floating-point rounding errors and string-sorting aggregation bugs.
+5. **Reverse Write-Back for Zero-Downtime Rollback**: `LegacyWriteBackConsumer` listens to `petstore.orders.created` and replicates new modern orders back into the legacy HSQLDB relational tables. If the business ever needs to fail back to the legacy monolith during cutover, legacy data remains completely up to date.
+6. **O(1) Pre-Indexed Shadow Reconciliation**: `ShadowReadComparator` loads target MongoDB records into an in-memory hash map keyed by deterministic IDs (`_id`), transforming audit verification from $O(N \times M)$ nested scans into an ultra-fast $O(N)$ lookup.
+7. **Enterprise Password Hardening & Lazy Migration**: `UserService` integrates `BCryptPasswordEncoder`. During login, legacy SHA-1/plain hashes are validated and lazily upgraded in MongoDB to salted BCrypt hashes (work factor 10), securing credentials while maintaining seamless backward compatibility.
+8. **Dynamic Dual-Write Kill Switch**: `@Value("${migration.dualwrite.enabled:true}")` allows operations teams to pause or resume dual-write traffic instantly at runtime via Spring Boot Actuator `/actuator/refresh` without restarting JVMs.
 
 ---
 
 > [!TIP]
 > **Legacy System Deep Dive**: For an exhaustive architectural breakdown of the 2002 J2EE BluePrints implementation (the 4 `.ear` archives, WAF framework, EJB 2.0 component model, 3NF schema, and order flow), read the [Legacy Pet Store Architecture & Component Deep Dive](Legacy-PetStore-Architecture-&-Components).
+
 

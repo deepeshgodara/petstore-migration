@@ -96,35 +96,62 @@ classDiagram
     class OrderService {
         -OrderRepository orderRepo
         -DualWritePublisher dualWritePublisher
+        -OrderEventProducer orderEventProducer
+        -OutboxRepository outboxRepo
+        -ObjectMapper objectMapper
+        +placeOrder(CreateOrderRequest) OrderDocument
+        +createOrder(OrderDocument) OrderDocument
+        +updateOrderStatus(String, OrderStatus) OrderDocument
+        +getAdminAnalytics() AdminAnalyticsResponse
+    }
+
+    class OutboxDocument {
+        -String id
+        -String aggregateType
+        -String aggregateId
+        -String eventType
+        -String topic
+        -String payload
+        -String status
+        -int retryCount
+        -Instant createdAt
+        -Instant processedAt
+    }
+
+    class OutboxRelayScheduler {
+        -OutboxRepository outboxRepo
         -KafkaTemplate kafkaTemplate
-        +createOrder(OrderRequest) OrderResponse
-        +getOrderById(String) OrderResponse
-        +updateOrderStatus(String, OrderStatus) OrderResponse
-        +getAdminSummary(DateRange) AdminSummaryResponse
+        -ObjectMapper objectMapper
+        +relayPendingEvents()
     }
 
     class DualWritePublisher {
-        -KafkaTemplate~String, DualWriteOrderEvent~ kafkaTemplate
+        -KafkaTemplate~String, OrderDualWriteEvent~ kafkaTemplate
+        -MigrationParityMetrics metrics
         +publishOrderCreated(OrderDocument)
-        +publishOrderStatusUpdated(OrderDocument)
+        +publishOrderStatusUpdated(OrderDocument, OrderStatus, OrderStatus)
     }
 
     class OrderRepository {
         <<interface>>
         +findByUserId(String) List~OrderDocument~
         +findByStatus(OrderStatus) List~OrderDocument~
-        +countByStatus(OrderStatus) long
+    }
+
+    class OutboxRepository {
+        <<interface>>
+        +findByStatusOrderByCreatedAtAsc(String, Pageable) List~OutboxDocument~
     }
 
     class OrderDocument {
         -String id
-        -String orderId
+        -Long version
         -String userId
         -OrderStatus status
-        -BigDecimal totalAmount
+        -BigDecimal totalPrice
         -Instant orderDate
         -List~LineItemDocument~ lineItems
-        -AddressDocument shippingAddress
+        -AddressDocument shipping
         -PaymentDocument payment
         -String locale
     }
@@ -133,8 +160,7 @@ classDiagram
         <<enumeration>>
         PENDING
         APPROVED
-        REJECTED
-        PROCESSING
+        DENIED
         COMPLETED
         CANCELLED
     }

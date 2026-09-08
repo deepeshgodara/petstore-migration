@@ -904,41 +904,72 @@
       </div>
     </div>
 
-    <!-- SLIDE 19: Future Scope & Roadmap -->
+    <!-- SLIDE 19: Production Hardening -->
     <div class="slide" id="slide-19">
       <div class="slide-header">
-        <span class="slide-category">FUTURE IMPROVEMENTS & SCOPE</span>
-        <h2 class="slide-title">Future Scope: Enterprise Roadmap & Production Hardening</h2>
+        <span class="slide-category">ENTERPRISE PRODUCTION HARDENING</span>
+        <h2 class="slide-title">Production Hardening: Remediated Gotchas & Trade-offs</h2>
       </div>
       <div class="slide-body">
         <div class="card highlight-blue">
-          <div class="card-title blue">Architecture & Resilience Hardening</div>
+          <div class="card-title blue">Data Integrity & Concurrency Remediations</div>
           <ul class="bullet-list">
-            <li><strong>Transactional Outbox Pattern:</strong> Persist domain events into MongoDB 'outbox' collection within the same document transaction before Kafka dispatch.</li>
-            <li><strong>Optimistic Locking (@Version):</strong> Add version tracking and CAS on status transitions to eliminate concurrent write clobbering.</li>
+            <li><strong>Transactional Outbox Pattern:</strong> Implemented <code>petstore_outbox</code> + <code>OutboxRelayScheduler</code> (500ms poller) guaranteeing zero event loss on broker downtime.</li>
+            <li><strong>@Version Optimistic Locking:</strong> Added CAS versioning on <code>OrderDocument</code> and wired <code>MongoTransactionManager</code> on replica set <code>rs0</code>.</li>
+            <li><strong>BSON Decimal128 Precision:</strong> Registered custom <code>MongoCustomConversions</code> and backfilled data for index-backed monetary aggregations.</li>
+            <li><strong>Automated Startup Indexes:</strong> <code>DatabaseIndexInitializer</code> creates compound and multilingual text indexes on <code>ApplicationReadyEvent</code>.</li>
+          </ul>
+        </div>
+        <div class="card highlight-green">
+          <div class="card-title green">Security & Migration Tooling Remediations</div>
+          <ul class="bullet-list">
+            <li><strong>Password Security & Lazy Migration:</strong> Fixed blank password bypass; integrated <code>BCryptPasswordEncoder</code> (work factor 10) with lazy upgrade on login.</li>
+            <li><strong>Reverse Write-Back Synchronization:</strong> <code>LegacyWriteBackConsumer</code> listens to <code>petstore.orders.created</code> and mirrors orders into legacy HSQLDB for instant rollback.</li>
+            <li><strong>O(1) Shadow Reconciliation:</strong> <code>ShadowReadComparator</code> pre-indexes target documents into in-memory hash maps, eliminating O(N^2) full scans.</li>
+            <li><strong>Dynamic Dual-Write Kill Switch:</strong> <code>migration.dualwrite.enabled</code> controllable at runtime via Spring Boot Actuator <code>/actuator/refresh</code>.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="speaker-notes-drawer">
+        <strong>Talking Point:</strong> Detail the systematic resolution of all 12 MongoDB gotchas and architectural trade-offs, proving enterprise-grade resilience across transactions, money typing, index drift, and security.
+      </div>
+    </div>
+
+    <!-- SLIDE 20: Future Scope & Roadmap -->
+    <div class="slide" id="slide-20">
+      <div class="slide-header">
+        <span class="slide-category">FUTURE IMPROVEMENTS & SCOPE</span>
+        <h2 class="slide-title">Future Scope: Enterprise Roadmap & Cloud-Native Scale</h2>
+      </div>
+      <div class="slide-body">
+        <div class="card highlight-blue">
+          <div class="card-title blue">Architecture & Cloud-Native Scaling</div>
+          <ul class="bullet-list">
+            <li><strong>Hardening Completed:</strong> Transactional Outbox, @Version optimistic locking, Decimal128, and reverse write-back are implemented and green.</li>
             <li><strong>Production Orchestration:</strong> Package services into distroless Jib Docker containers deployed via Kubernetes & Helm charts.</li>
             <li><strong>Distributed Tracing:</strong> Instrument OpenTelemetry and Jaeger tracing across React, Spring Boot, Kafka, and MongoDB.</li>
-            <li><strong>Automated Reverse CDC:</strong> Continuous reverse sync from modern MongoDB back to legacy for indefinite post-cutover rollback capability.</li>
+            <li><strong>High Availability:</strong> Multi-region MongoDB sharded cluster with automatic zone-aware read/write routing.</li>
+            <li><strong>Automated Reverse CDC:</strong> Debezium connector on outbox for continuous change data capture.</li>
           </ul>
         </div>
         <div class="card highlight-purple">
           <div class="card-title purple">Migration Tooling & Security Maturation</div>
           <ul class="bullet-list">
-            <li><strong>Spring Security & OAuth2/JWT:</strong> Transition from client-side route guards to stateless JWT bearer authentication with BCrypt hashing.</li>
+            <li><strong>Security Hardening Completed:</strong> BCrypt password hashing, lazy legacy upgrade, and blank password prevention live.</li>
+            <li><strong>Stateless Auth Gateway:</strong> Spring Security OAuth2 / JWT bearer token exchange with Redis session cache.</li>
             <li><strong>Automated Envoy Canary Router:</strong> Implement progressive traffic shifting (1% internal &rarr; 10% canary &rarr; 50% &rarr; 100% cutover).</li>
-            <li><strong>Continuous Windowed Audit:</strong> Upgrade O(n^2) reconciler to id-keyed bucketed reconciliation for millions of records.</li>
-            <li><strong>Automated Load & Chaos Injection:</strong> Scheduled weekly network partitions and cluster failovers in staging environment.</li>
+            <li><strong>Continuous Windowed Audit:</strong> Scale O(1) reconciler to bucketed sliding window audits for millions of records.</li>
             <li><strong>Zero-Trust Policy:</strong> Mutual TLS (mTLS) between all microservices and MongoDB replica set.</li>
           </ul>
         </div>
       </div>
       <div class="speaker-notes-drawer">
-        <strong>Talking Point:</strong> Conclude the technical roadmap by detailing our phased priorities for scaling this architecture to mission-critical multi-region enterprise production.
+        <strong>Talking Point:</strong> Conclude the technical roadmap by explaining that the core resilience gaps are closed, and future horizons focus on Kubernetes orchestration, Envoy canary routing, and OpenTelemetry.
       </div>
     </div>
 
-    <!-- SLIDE 20: Production Readiness -->
-    <div class="slide" id="slide-20">
+    <!-- SLIDE 21: Production Readiness -->
+    <div class="slide" id="slide-21">
       <div class="slide-header">
         <span class="slide-category">OPERATIONAL STATUS</span>
         <h2 class="slide-title">Production Readiness & Verification Grid</h2>
@@ -949,9 +980,9 @@
           <ul class="bullet-list">
             <li><strong>Storefront (port 3000):</strong> React 18 SPA (HTTP 200 OK).</li>
             <li><strong>Catalog Service (port 8081):</strong> 5 Categories, 16 Products.</li>
-            <li><strong>Order Service (port 8082):</strong> Registration, Checkout, Analytics.</li>
+            <li><strong>Order Service (port 8082):</strong> Registration, Login, Orders, Sales Analytics.</li>
             <li><strong>Migration Service (port 8085):</strong> Parity Telemetry & Baseline ETL.</li>
-            <li><strong>MongoDB Replica Set (port 27017):</strong> 4 collections active.</li>
+            <li><strong>MongoDB Replica Set (port 27017):</strong> 5 collections active (rs0).</li>
             <li><strong>Apache Kafka (port 9092):</strong> 4 event topics active with DLQ.</li>
             <li><strong>Legacy TomEE Container (port 8000):</strong> 100% healthy and isolated.</li>
           </ul>
@@ -959,11 +990,12 @@
         <div class="card highlight-green">
           <div class="card-title green">Cutover Quality Gates Achieved</div>
           <ul class="bullet-list">
-            <li><strong>Data Fidelity:</strong> 100.0% Parity across 704 automated comparisons.</li>
-            <li><strong>Data Drifts:</strong> 0 precision discrepancies detected.</li>
+            <li><strong>Data Fidelity:</strong> 100.0% Parity across automated comparisons.</li>
+            <li><strong>Hardening Remediations:</strong> All 12 gotchas & trade-offs resolved.</li>
             <li><strong>Chaos Resilience:</strong> Secondary datastore failure proven with zero downtime on legacy.</li>
+            <li><strong>Unit & IT Tests:</strong> 90 tests green (0 failures) across 26 test classes.</li>
             <li><strong>Code Quality:</strong> 100% Google Style Guide compliance in Java and TypeScript (0 oxlint warnings).</li>
-            <li><strong>Documentation:</strong> Complete 6-chapter GitHub Wiki suite synchronized.</li>
+            <li><strong>Documentation:</strong> Complete GitHub Wiki and PowerPoint decks synchronized.</li>
             <li><strong>Status:</strong> Ready for Production DNS Cutover.</li>
           </ul>
         </div>
@@ -982,7 +1014,7 @@
 
   <script>
     let currentSlide = 1;
-    const totalSlides = 20;
+    const totalSlides = 21;
 
     function showSlide(index) {
       if (index < 1) index = 1;

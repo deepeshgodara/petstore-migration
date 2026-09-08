@@ -577,3 +577,14 @@ This granular checklist tracks the implementation of the preferred **Dual-Write 
 - [x] **Task 7.3**: Execute chaos experiment: simulate secondary Mongo failure and verify legacy application continues uninterrupted with DLQ recovery.
 - [x] **Task 7.4**: Author comprehensive `README.md` with step-by-step developer build/run instructions for the presentation playback.
 - [x] **Task 7.5**: Execute automated supplier inventory verification suite (`scripts/verify_supplier_inventory.sh`) validating REST endpoints and customer catalog reflection.
+
+### Phase 8: Enterprise Production Hardening & Gotcha Remediation
+- [x] **Task 8.1**: **Security & Password Hardening**: Fix blank password authentication bypass in `UserService`, implement `BCryptPasswordEncoder` (work factor 10), and add lazy hash migration on legacy user login.
+- [x] **Task 8.2**: **BSON Monetary Precision**: Register `MongoCustomConversions` (`BigDecimal` ↔ `Decimal128` IEEE 754-2008) in `MongoConfig` and execute `scripts/backfill_decimal128.js` to enable native index-backed sorting and aggregations.
+- [x] **Task 8.3**: **Automated Startup Index Materialization**: Implement `DatabaseIndexInitializer` listening to `ApplicationReadyEvent` to eliminate index drift and materialize compound indexes (`userId_orderDate`, `status_orderDate`, `email`, `role`) and multilingual text search index (`multilingual_text_idx`).
+- [x] **Task 8.4**: **Optimistic Concurrency & ACID Transactions**: Add `@Version private Long version;` to `OrderDocument` for CAS race condition protection, configure `MongoTransactionManager` on replica set `rs0`, and annotate mutating service methods with `@Transactional`.
+- [x] **Task 8.5**: **Transactional Outbox Pattern**: Implement `OutboxDocument`, `OutboxRepository`, atomic outbox writing in `OrderService`, and background `OutboxRelayScheduler` (polling every 500ms) ensuring at-least-once zero-event-loss delivery even during Kafka broker downtime.
+- [x] **Task 8.6**: **Reverse Write-Back for Live Rollback Safety**: Implement `LegacyWriteBackConsumer` listening to `petstore.orders.created` and executing SQL replay against legacy HSQLDB to ensure legacy system stays synchronized for risk-free rollback.
+- [x] **Task 8.7**: **O(1) Shadow Reconciliation Optimization**: Refactor `ShadowReadComparator` to pre-index MongoDB target documents into in-memory hash maps, eliminating $O(N^2)$ full scans and supporting BCrypt password matching.
+- [x] **Task 8.8**: **Dynamic Operational Kill Switch**: Expose `migration.dualwrite.enabled` in `petstore-order-service` with runtime reloads via Spring Boot Actuator `/actuator/refresh`.
+
