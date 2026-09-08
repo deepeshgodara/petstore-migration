@@ -45,10 +45,24 @@ class MongoDualWriteConsumerTest {
     OrderDocument order = new OrderDocument(
         "ORD-101", "user1", null, OrderStatus.PENDING, BigDecimal.TEN, "en_US", null, null, null, null);
     OrderDualWriteEvent event = OrderDualWriteEvent.ofCreated(order, "TEST");
+    when(mongoTemplate.exists(any(Query.class), eq("petstore_orders"))).thenReturn(false);
 
     consumer.onDualWriteEvent(event);
 
-    verify(mongoTemplate).save(order, "petstore_orders");
+    verify(mongoTemplate).insert(order, "petstore_orders");
+  }
+
+  @Test
+  @DisplayName("Should skip duplicate ORDER_CREATED event when order already exists in MongoDB")
+  void shouldSkipDuplicateOrderCreatedWhenAlreadyExists() {
+    OrderDocument order = new OrderDocument(
+        "ORD-101-DUP", "user1", null, OrderStatus.PENDING, BigDecimal.TEN, "en_US", null, null, null, null);
+    OrderDualWriteEvent event = OrderDualWriteEvent.ofCreated(order, "TEST");
+    when(mongoTemplate.exists(any(Query.class), eq("petstore_orders"))).thenReturn(true);
+
+    consumer.onDualWriteEvent(event);
+
+    verify(mongoTemplate, org.mockito.Mockito.never()).insert(any(OrderDocument.class), eq("petstore_orders"));
   }
 
   @Test
@@ -99,7 +113,8 @@ class MongoDualWriteConsumerTest {
         "ORD-ERR", "user1", null, OrderStatus.PENDING, BigDecimal.TEN, "en_US", null, null, null, null);
     OrderDualWriteEvent event = OrderDualWriteEvent.ofCreated(order, "TEST");
 
-    when(mongoTemplate.save(any(), eq("petstore_orders")))
+    when(mongoTemplate.exists(any(Query.class), eq("petstore_orders"))).thenReturn(false);
+    when(mongoTemplate.insert(any(OrderDocument.class), eq("petstore_orders")))
         .thenThrow(new RuntimeException("MongoDB replica set connection timeout"));
 
     assertThatThrownBy(() -> consumer.onDualWriteEvent(event))

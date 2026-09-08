@@ -85,6 +85,12 @@ public class ShadowReadComparator {
     }
 
     if (legacyOrder == null) {
+      if (mongoOrder != null && !mongoOrder.isMigratedFromLegacy()) {
+        // Order placed natively in the modern storefront post-migration
+        long duration = System.nanoTime() - startNanos;
+        metrics.recordShadowComparison(true, duration);
+        return ComparisonResult.match("ORDER", orderId, duration);
+      }
       discrepancies.add(new DiscrepancyDetail(
           "existence",
           "ABSENT",

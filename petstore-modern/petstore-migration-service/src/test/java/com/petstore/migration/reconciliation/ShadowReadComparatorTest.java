@@ -111,4 +111,21 @@ class ShadowReadComparatorTest {
     assertThat(result.isMatch()).isFalse();
     assertThat(result.getDiscrepancies()).anyMatch(d -> "MISSING_DOCUMENT".equals(d.discrepancyType()));
   }
+
+  @Test
+  @DisplayName("Should match modern order placed post-migration without legacy counterpart")
+  void shouldMatchModernOrderPlacedPostMigration() {
+    OrderDocument mongoOrder = new OrderDocument(
+        "1788869723088", "engineer", null, OrderStatus.PENDING, BigDecimal.valueOf(125.50), "en_US", null, null, null, null);
+    mongoOrder.setMigratedFromLegacy(false);
+
+    when(orderReader.readCompleteOrdersAsDocuments()).thenReturn(List.of());
+    when(mongoTemplate.findById("1788869723088", OrderDocument.class, "petstore_orders")).thenReturn(mongoOrder);
+
+    ComparisonResult result = comparator.compareOrder("1788869723088");
+
+    assertThat(result.isMatch()).isTrue();
+    assertThat(result.getDiscrepancies()).isEmpty();
+    assertThat(metrics.getParityPercentage()).isEqualTo(100.0);
+  }
 }

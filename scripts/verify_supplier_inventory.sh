@@ -7,6 +7,7 @@
 #          3. Simulates Supplier updating stock via PUT /api/v1/items/{itemId}/inventory
 #          4. Validates real-time persistence inside MongoDB replica set 'rs0'
 #          5. Confirms immediate REST reflection on customer-facing item endpoints
+#          6. Teardown restores item stock to baseline for continuous parity stability
 # ==============================================================================
 
 set -euo pipefail
@@ -27,7 +28,7 @@ VITE_URL="http://localhost:3000"
 CATALOG_SERVICE_URL="http://localhost:8081"
 
 # Step 1: Health & Service Availability
-echo -e "\n${BOLD}[Step 1/5] Verifying catalog microservice and frontend proxy...${NC}"
+echo -e "\n${BOLD}[Step 1/6] Verifying catalog microservice and frontend proxy...${NC}"
 
 if ! curl -s -f "${CATALOG_SERVICE_URL}/api/v1/categories" > /dev/null; then
   echo -e "${RED}[FAIL] Catalog Service at ${CATALOG_SERVICE_URL} is unreachable!${NC}"
@@ -42,7 +43,7 @@ fi
 echo -e "  ${GREEN}✓${NC} Vite Frontend server is healthy on port 3000"
 
 # Step 2: Fetch Full Inventory via Supplier API
-echo -e "\n${BOLD}[Step 2/5] Fetching complete inventory catalog via GET /api/v1/items...${NC}"
+echo -e "\n${BOLD}[Step 2/6] Fetching complete inventory catalog via GET /api/v1/items...${NC}"
 
 ITEMS_RESPONSE=$(curl -s "${VITE_URL}/api/v1/items")
 TOTAL_ITEMS=$(echo "${ITEMS_RESPONSE}" | grep -o '"itemId"' | wc -l | tr -d ' ')
@@ -54,7 +55,7 @@ fi
 echo -e "  ${GREEN}✓${NC} Successfully loaded ${BOLD}${CYAN}${TOTAL_ITEMS} catalog SKUs${NC} across all 5 pet categories"
 
 # Step 3: Record Baseline Stock for Target Item (EST-1 Angelfish)
-echo -e "\n${BOLD}[Step 3/5] Querying baseline stock for Item EST-1 (Large Angelfish)...${NC}"
+echo -e "\n${BOLD}[Step 3/6] Querying baseline stock for Item EST-1 (Large Angelfish)...${NC}"
 TARGET_ITEM=$(curl -s "${VITE_URL}/api/v1/items/EST-1")
 INITIAL_QTY=$(echo "${TARGET_ITEM}" | grep -o '"inventoryQuantity":[0-9]*' | cut -d':' -f2)
 ITEM_NAME=$(echo "${TARGET_ITEM}" | grep -o '"productName":"[^"]*' | cut -d'"' -f4)
@@ -66,7 +67,7 @@ echo -e "      Current Warehouse Stock: ${YELLOW}${INITIAL_QTY} units${NC}"
 NEW_QTY=$((INITIAL_QTY + 50))
 
 # Step 4: Execute Stock Update via Supplier API
-echo -e "\n${BOLD}[Step 4/5] Simulating Supplier updating stock to ${NEW_QTY} units (PUT /api/v1/items/EST-1/inventory)...${NC}"
+echo -e "\n${BOLD}[Step 4/6] Simulating Supplier updating stock to ${NEW_QTY} units (PUT /api/v1/items/EST-1/inventory)...${NC}"
 
 UPDATE_PAYLOAD="{\"quantity\": ${NEW_QTY}}"
 UPDATE_RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" -X PUT "${VITE_URL}/api/v1/items/EST-1/inventory" \
@@ -90,7 +91,7 @@ fi
 echo -e "  ${GREEN}✓${NC} Supplier API returned HTTP 200: Stock updated to ${BOLD}${GREEN}${PERSISTED_QTY} units${NC}"
 
 # Step 5: Verify MongoDB Document Store & Customer REST Reflection
-echo -e "\n${BOLD}[Step 5/5] Verifying MongoDB collection 'petstore_products' and customer catalog reflection...${NC}"
+echo -e "\n${BOLD}[Step 5/6] Verifying MongoDB collection 'petstore_products' and customer catalog reflection...${NC}"
 
 MONGO_DOC=$(docker exec petstore-mongo mongosh --quiet --eval "JSON.stringify(db.getSiblingDB('petstore').petstore_products.findOne({'items.itemId': 'EST-1'}, {'items.$': 1}))")
 
@@ -111,6 +112,13 @@ if [ "${VERIFIED_QTY}" -ne "${NEW_QTY}" ]; then
   exit 1
 fi
 echo -e "  ${GREEN}✓${NC} Customer Storefront Catalog verified: immediately returns fresh stock level (${VERIFIED_QTY} units)"
+
+# Step 6: Teardown & Reset inventory back to baseline for parity stability
+echo -e "\n${BOLD}[Step 6/6] Restoring Item EST-1 stock back to baseline (${INITIAL_QTY} units)...${NC}"
+curl -s -X PUT "${VITE_URL}/api/v1/items/EST-1/inventory" \
+  -H "Content-Type: application/json" \
+  -d "{\"quantity\": ${INITIAL_QTY}}" > /dev/null
+echo -e "  ${GREEN}✓${NC} Stock restored to ${INITIAL_QTY} units for continuous parity stability"
 
 echo -e "\n${BOLD}${GREEN}===================================================================${NC}"
 echo -e "${BOLD}${GREEN}  [SUCCESS] SUPPLIER INVENTORY MANAGEMENT FULLY VERIFIED!          ${NC}"

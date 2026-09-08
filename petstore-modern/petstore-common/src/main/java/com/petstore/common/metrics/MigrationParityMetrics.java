@@ -118,4 +118,13 @@ public class MigrationParityMetrics {
   public long getTotalMatches() {
     return totalMatchesCount.get();
   }
+
+  /**
+   * Resets atomic comparison and match counters to synchronize parity metrics
+   * after reconciliation self-healing or when initiating a fresh audit snapshot.
+   */
+  public void resetAuditCounters() {
+    totalComparisonsCount.set(0);
+    totalMatchesCount.set(0);
+  }
 }

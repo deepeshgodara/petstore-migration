@@ -79,7 +79,15 @@ public class MongoDualWriteConsumer {
     if (order == null) {
       throw new IllegalArgumentException("ORDER_CREATED event missing OrderDocument payload");
     }
-    mongoTemplate.save(order, ORDERS_COLLECTION);
+
+    Query query = Query.query(Criteria.where("_id").is(order.getId()));
+    if (mongoTemplate.exists(query, ORDERS_COLLECTION)) {
+      log.info("Dual-write order [{}] already exists in MongoDB collection [{}], skipping redundant insert",
+          order.getId(), ORDERS_COLLECTION);
+      return;
+    }
+
+    mongoTemplate.insert(order, ORDERS_COLLECTION);
     log.info("Dual-write synced new order [{}] to MongoDB collection [{}]", order.getId(), ORDERS_COLLECTION);
   }
 
@@ -91,8 +99,8 @@ public class MongoDualWriteConsumer {
 
     UpdateResult result = mongoTemplate.updateFirst(query, update, ORDERS_COLLECTION);
     if (result.getMatchedCount() == 0 && event.getOrder() != null) {
-      // Document not yet in secondary store: save entire aggregate
-      mongoTemplate.save(event.getOrder(), ORDERS_COLLECTION);
+      // Document not yet in secondary store: insert entire aggregate
+      mongoTemplate.insert(event.getOrder(), ORDERS_COLLECTION);
       log.info("Dual-write inserted missing order [{}] during status update to [{}]",
           event.getOrderId(), event.getNewStatus());
     } else {

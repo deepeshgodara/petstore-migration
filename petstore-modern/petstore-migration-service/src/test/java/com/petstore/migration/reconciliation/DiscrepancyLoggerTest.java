@@ -87,4 +87,26 @@ class DiscrepancyLoggerTest {
     verify(comparator).compareAllOrders();
     assertThat(discrepancyLogger.getTotalReportCount()).isEqualTo(1);
   }
+
+  @Test
+  @DisplayName("Should self-heal report buffer and reset metrics when all comparisons match 100%")
+  void shouldSelfHealWhenAllComparisonsMatch() {
+    // First: record an earlier discrepancy
+    DiscrepancyDetail detail = new DiscrepancyDetail(
+        "status", "COMPLETED", "PENDING", "STATUS_MISMATCH", "Mismatch");
+    discrepancyLogger.recordAndLog(ComparisonResult.drift("ORDER", "100114", List.of(detail), 600_000L));
+    assertThat(discrepancyLogger.getTotalReportCount()).isEqualTo(1);
+
+    // Second: all comparisons match in subsequent audit
+    ComparisonResult match1 = ComparisonResult.match("ORDER", "100113", 500_000L);
+    ComparisonResult match2 = ComparisonResult.match("ORDER", "100114", 500_000L);
+    when(comparator.compareAllOrders()).thenReturn(List.of(match1, match2));
+
+    discrepancyLogger.scheduledReconciliationAudit();
+
+    assertThat(discrepancyLogger.getTotalReportCount()).isZero();
+    assertThat(metrics.getTotalComparisons()).isEqualTo(2L);
+    assertThat(metrics.getTotalMatches()).isEqualTo(2L);
+    assertThat(metrics.getParityPercentage()).isEqualTo(100.0);
+  }
 }

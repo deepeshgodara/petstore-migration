@@ -62,4 +62,18 @@ class MigrationParityMetricsTest {
     double gaugeValue = meterRegistry.get("petstore.migration.parity.percentage").gauge().value();
     assertThat(gaugeValue).isCloseTo(90.0, within(0.001));
   }
+
+  @Test
+  @DisplayName("Should reset audit counters cleanly")
+  void shouldResetAuditCounters() {
+    metrics.recordShadowComparison(true, 1_000_000L);
+    metrics.recordShadowComparison(false, 1_000_000L);
+    assertThat(metrics.getTotalComparisons()).isEqualTo(2L);
+    assertThat(metrics.getTotalMatches()).isEqualTo(1L);
+
+    metrics.resetAuditCounters();
+    assertThat(metrics.getTotalComparisons()).isZero();
+    assertThat(metrics.getTotalMatches()).isZero();
+    assertThat(metrics.getParityPercentage()).isEqualTo(100.0);
+  }
 }
