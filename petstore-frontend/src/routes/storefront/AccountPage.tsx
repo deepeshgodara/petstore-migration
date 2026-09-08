@@ -4,9 +4,11 @@ import { OrderDocument, OrderLineItem } from '../../types/order';
 import { orderService } from '../../services/orderService';
 import { supplierService } from '../../services/supplierService';
 import { Item } from '../../types/catalog';
-import { User, Package, Calendar, DollarSign, Clock, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { User, Package, Calendar, Clock, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getProductImageUrl, handleImageError } from '../../utils/imageUtils';
+import { formatCurrency } from '../../utils/currencyUtils';
+import { Locale } from '../../types/catalog';
 
 export const AccountPage: React.FC = () => {
   const { user } = useAuth();
@@ -227,8 +229,7 @@ export const AccountPage: React.FC = () => {
                       <span>{dateFormatted}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 800, color: 'var(--accent-emerald)', fontSize: '1.1rem' }}>
-                      <DollarSign size={16} />
-                      <span>{Number(order.totalPrice || 0).toFixed(2)}</span>
+                      <span>{formatCurrency(order.totalPrice, (order.locale as Locale) || 'en_US')}</span>
                     </div>
                   </div>
                 </div>
@@ -279,7 +280,7 @@ export const AccountPage: React.FC = () => {
                             </div>
                           </div>
                           <span style={{ fontWeight: 700, color: 'var(--accent-emerald)' }}>
-                            ${Number(li.totalCost).toFixed(2)}
+                            {formatCurrency(li.totalCost, (order.locale as Locale) || 'en_US')}
                           </span>
                         </div>
                       );

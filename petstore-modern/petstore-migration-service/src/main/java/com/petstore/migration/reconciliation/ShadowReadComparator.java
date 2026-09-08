@@ -1,7 +1,9 @@
 package com.petstore.migration.reconciliation;
 
+import com.petstore.catalog.document.ItemDocument;
 import com.petstore.catalog.document.ProductDocument;
 import com.petstore.common.metrics.MigrationParityMetrics;
+import com.petstore.migration.model.LegacyItemRow;
 import com.petstore.migration.model.LegacyProductRow;
 import com.petstore.migration.model.LegacyUserRow;
 import com.petstore.migration.reader.LegacyCatalogCursorReader;
@@ -11,9 +13,12 @@ import com.petstore.order.document.OrderDocument;
 import com.petstore.user.document.UserDocument;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -192,6 +197,54 @@ public class ShadowReadComparator {
             "Category ID does not match"
         ));
       }
+
+      // Verify SKU item pricing across all currencies and inventory quantity against legacy DB
+      List<LegacyItemRow> legacyItems = catalogReader.readAllItems().stream()
+          .filter(i -> productId.equals(i.productId()))
+          .toList();
+
+      if (mongoProduct.getItems() != null && !legacyItems.isEmpty()) {
+        Map<String, Integer> legacyStockMap = legacyItems.stream()
+            .collect(Collectors.toMap(LegacyItemRow::itemId, LegacyItemRow::inventoryQuantity, (a, b) -> a));
+
+        Map<String, Map<String, BigDecimal>> legacyPriceByLocale = new HashMap<>();
+        for (LegacyItemRow row : legacyItems) {
+          legacyPriceByLocale.computeIfAbsent(row.itemId(), k -> new HashMap<>())
+              .put(row.locale(), row.listPrice());
+        }
+
+        for (ItemDocument item : mongoProduct.getItems()) {
+          Map<String, BigDecimal> expectedPrices = legacyPriceByLocale.get(item.getItemId());
+          if (expectedPrices != null) {
+            for (Map.Entry<String, BigDecimal> priceEntry : expectedPrices.entrySet()) {
+              String loc = priceEntry.getKey();
+              BigDecimal expectedPrice = priceEntry.getValue();
+              BigDecimal actualPrice = item.resolveListPrice(loc);
+              if (expectedPrice != null && actualPrice != null
+                  && expectedPrice.compareTo(actualPrice) != 0) {
+                discrepancies.add(new DiscrepancyDetail(
+                    "itemPrice:" + item.getItemId() + ":" + loc,
+                    expectedPrice.toPlainString(),
+                    actualPrice.toPlainString(),
+                    "PRICE_MISMATCH",
+                    "Item listPrice in " + loc + " does not match legacy price"
+                ));
+              }
+            }
+          }
+
+          Integer expectedStock = legacyStockMap.get(item.getItemId());
+          if (expectedStock != null && expectedStock != item.getInventoryQuantity()) {
+            discrepancies.add(new DiscrepancyDetail(
+                "inventoryQuantity:" + item.getItemId(),
+                String.valueOf(expectedStock),
+                String.valueOf(item.getInventoryQuantity()),
+                "INVENTORY_MISMATCH",
+                "Item inventoryQuantity does not match legacy INVENTORY count"
+            ));
+          }
+        }
+      }
     }
 
     long duration = System.nanoTime() - startNanos;
@@ -218,6 +271,15 @@ public class ShadowReadComparator {
     List<LegacyUserRow> legacyUsers = userReader.readAllUsers();
     for (LegacyUserRow u : legacyUsers) {
       results.add(compareUser(u.username()));
+    }
+
+    // Also include all products in reconciliation audits to continuously verify categories, SKU prices, and inventory stock
+    List<LegacyProductRow> legacyProducts = catalogReader.readAllProducts();
+    java.util.Set<String> auditedProductIds = new java.util.HashSet<>();
+    for (LegacyProductRow p : legacyProducts) {
+      if (auditedProductIds.add(p.productId())) {
+        results.add(compareProduct(p.productId()));
+      }
     }
     return results;
   }

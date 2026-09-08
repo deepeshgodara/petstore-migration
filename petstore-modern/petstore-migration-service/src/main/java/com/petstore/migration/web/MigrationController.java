@@ -6,6 +6,7 @@ import com.petstore.migration.service.BaselineMigrationService;
 import com.petstore.migration.service.BaselineMigrationService.MigrationSummary;
 import com.petstore.migration.service.MongoDiagnosticsService;
 import com.petstore.migration.service.ParityDashboardService;
+import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -44,6 +45,18 @@ public class MigrationController {
   public ResponseEntity<MigrationSummary> triggerBaselineExtraction() {
     MigrationSummary summary = baselineMigrationService.executeBaselineMigration();
     return ResponseEntity.ok(summary);
+  }
+
+  /**
+   * Drops all modern MongoDB collections to reset the application to a clean empty slate for demonstration.
+   */
+  @PostMapping("/clean-slate")
+  public ResponseEntity<Map<String, Object>> cleanSlate() {
+    baselineMigrationService.cleanAllCollections();
+    return ResponseEntity.ok(Map.of(
+        "status", "SUCCESS",
+        "message", "MongoDB collections dropped. Modern application is now completely empty."
+    ));
   }
 
   /**

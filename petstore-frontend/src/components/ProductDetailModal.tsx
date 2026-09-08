@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Product, Item, Locale } from '../types/catalog';
 import { X, Check, ShoppingBag } from 'lucide-react';
 import { getProductImageUrl, handleImageError } from '../utils/imageUtils';
+import { formatCurrency } from '../utils/currencyUtils';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -160,7 +161,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                           transition: 'all 0.2s ease',
                         }}
                       >
-                        {item.attribute || item.itemId} - ${Number(item.listPrice).toFixed(2)}
+                        {item.attribute || item.itemId} - {formatCurrency(item.listPrice, locale)}
                       </button>
                     );
                   })}
@@ -173,7 +174,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               <div>
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>{labels.unitPrice}</span>
                 <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-emerald)' }}>
-                  ${Number(selectedItem?.listPrice || 0).toFixed(2)}
+                  {formatCurrency(selectedItem?.listPrice || 0, locale)}
                 </span>
               </div>
               <div style={{ textAlign: 'right' }}>
@@ -220,7 +221,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 ) : (
                   <>
                     <ShoppingBag size={18} />
-                    <span>{labels.addToCart} (${((selectedItem ? Number(selectedItem.listPrice) : 0) * quantity).toFixed(2)})</span>
+                    <span>{labels.addToCart} ({formatCurrency((selectedItem ? Number(selectedItem.listPrice) : 0) * quantity, locale)})</span>
                   </>
                 )}
               </button>

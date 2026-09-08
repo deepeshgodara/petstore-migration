@@ -187,6 +187,17 @@ public class BaselineMigrationService {
   }
 
   /**
+   * Drops all modern MongoDB collections for a clean demonstration slate.
+   */
+  public void cleanAllCollections() {
+    mongoTemplate.dropCollection("petstore_categories");
+    mongoTemplate.dropCollection("petstore_products");
+    mongoTemplate.dropCollection("petstore_orders");
+    mongoTemplate.dropCollection("petstore_users");
+    log.info("Dropped all MongoDB petstore collections for demonstration clean slate.");
+  }
+
+  /**
    * Summary record containing record counts and execution duration.
    */
   public record MigrationSummary(

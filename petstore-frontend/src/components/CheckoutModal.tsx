@@ -5,6 +5,7 @@ import { Address, CreateOrderRequest, OrderDocument, Payment } from '../types/or
 import { orderService } from '../services/orderService';
 import { useAuth } from '../auth';
 import { X, CheckCircle2, CreditCard, Truck, ShieldCheck, Loader2 } from 'lucide-react';
+import { formatCurrency } from '../utils/currencyUtils';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -198,7 +199,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Total Paid</span>
                 <span style={{ fontWeight: 800, color: 'var(--accent-emerald)', fontSize: '1.1rem' }}>
-                  ${Number(confirmedOrder.totalPrice).toFixed(2)}
+                  {formatCurrency(confirmedOrder.totalPrice, (confirmedOrder.locale as Locale) || locale)}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -417,7 +418,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <div>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block' }}>Total Due</span>
                 <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-emerald)' }}>
-                  ${total.toFixed(2)}
+                  {formatCurrency(total, locale)}
                 </span>
               </div>
 

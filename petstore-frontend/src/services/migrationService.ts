@@ -32,6 +32,19 @@ class MigrationApiService {
   }
 
   /**
+   * Drops modern MongoDB collections to reset to an empty slate for demonstration.
+   */
+  async cleanSlate(): Promise<{ status: string; message: string }> {
+    const response = await fetch(`${this.baseUrl}/clean-slate`, {
+      method: 'POST',
+    });
+    if (!response.ok) {
+      throw new Error(`Clean slate failed: ${response.status} ${response.statusText}`);
+    }
+    return response.json();
+  }
+
+  /**
    * Retrieves real-time MongoDB engine telemetry, cache metrics, and Compass connection parameters.
    */
   async getMongoDiagnostics(): Promise<MongoDiagnosticsResponse> {

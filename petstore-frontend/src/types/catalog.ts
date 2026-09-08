@@ -36,6 +36,8 @@ export interface Item {
   image: string;
   inventoryQuantity: number;
   attributes: Record<string, string>;
+  description?: string;
+  descriptions?: Record<string, string>;
 }
 
 export interface Product {

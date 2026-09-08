@@ -16,6 +16,7 @@ import {
   Check,
 } from 'lucide-react';
 import { getProductImageUrl } from '../../utils/imageUtils';
+import { formatCurrency } from '../../utils/currencyUtils';
 
 export const SupplierInventoryPage: React.FC = () => {
   const [items, setItems] = useState<Item[]>([]);
@@ -356,19 +357,35 @@ export const SupplierInventoryPage: React.FC = () => {
 
                     {/* Product Name & Attributes */}
                     <td style={{ padding: '1rem' }}>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{item.productName}</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        {item.attribute || 'Standard Breed Spec'}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{item.productName}</span>
+                        {item.attribute && (
+                          <span
+                            className="brand-badge"
+                            style={{
+                              fontSize: '0.68rem',
+                              padding: '0.12rem 0.45rem',
+                              background: 'rgba(99, 102, 241, 0.15)',
+                              color: '#a5b4fc',
+                              borderColor: 'rgba(99, 102, 241, 0.35)',
+                            }}
+                          >
+                            Variant: {item.attribute}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                        {item.description || 'Verified Breed Spec'}
                       </div>
                     </td>
 
                     {/* Pricing */}
                     <td style={{ padding: '1rem' }}>
                       <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                        Retail: ${Number(item.listPrice).toFixed(2)}
+                        Retail: {formatCurrency(item.listPrice, 'en_US')}
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        Wholesale: ${Number(item.unitCost).toFixed(2)}
+                        Wholesale: {formatCurrency(item.unitCost, 'en_US')}
                       </div>
                     </td>
 

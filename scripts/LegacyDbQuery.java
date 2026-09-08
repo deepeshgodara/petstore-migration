@@ -7,9 +7,13 @@ import java.sql.Statement;
 public class LegacyDbQuery {
 
   public static void main(String[] args) {
+    String defaultDb = new java.io.File(System.getProperty("user.dir") + "/legacy_container/tomee/data/petstoredb.script").exists()
+        ? System.getProperty("user.dir") + "/legacy_container/tomee/data/petstoredb"
+        : System.getProperty("user.dir") + "/docker/data/petstoredb";
+
     String dbPath = args.length > 0 && !args[0].isBlank()
         ? args[0]
-        : System.getProperty("user.dir") + "/docker/data/petstoredb";
+        : defaultDb;
 
     String query = args.length > 1 && !args[1].isBlank()
         ? args[1]

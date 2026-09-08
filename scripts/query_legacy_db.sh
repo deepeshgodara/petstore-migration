@@ -13,7 +13,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-DB_PATH="${ROOT_DIR}/docker/data/petstoredb"
+if [ -f "${ROOT_DIR}/legacy_container/tomee/data/petstoredb.script" ]; then
+  DB_PATH="${ROOT_DIR}/legacy_container/tomee/data/petstoredb"
+else
+  DB_PATH="${ROOT_DIR}/docker/data/petstoredb"
+fi
 JAR_PATH="${HOME}/.m2/repository/org/hsqldb/hsqldb/2.7.2/hsqldb-2.7.2.jar"
 
 # ANSI colors

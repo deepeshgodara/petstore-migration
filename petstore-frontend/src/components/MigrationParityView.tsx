@@ -13,6 +13,7 @@ import {
   Clock,
   Layers,
   Sparkles,
+  Trash2,
 } from 'lucide-react';
 
 export const MigrationParityView: React.FC = () => {
@@ -20,6 +21,7 @@ export const MigrationParityView: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [auditing, setAuditing] = useState<boolean>(false);
   const [extracting, setExtracting] = useState<boolean>(false);
+  const [cleaning, setCleaning] = useState<boolean>(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'info' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -88,6 +90,31 @@ export const MigrationParityView: React.FC = () => {
     }
   };
 
+  const handleCleanSlate = async () => {
+    if (!window.confirm('Reset modern application to empty state? All MongoDB collections will be dropped for live demonstration.')) {
+      return;
+    }
+    setCleaning(true);
+    try {
+      await migrationService.cleanSlate();
+      const updated = await migrationService.getParityMetrics(false);
+      setMetrics(updated);
+      setFeedback({
+        type: 'success',
+        text: 'MongoDB collections dropped! Modern application is now completely empty (0% parity).',
+      });
+      setTimeout(() => setFeedback(null), 5000);
+    } catch (err: unknown) {
+      console.error('Clean slate failed', err);
+      setFeedback({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Clean slate failed',
+      });
+    } finally {
+      setCleaning(false);
+    }
+  };
+
   const handleRefresh = async () => {
     setLoading(true);
     try {
@@ -130,9 +157,21 @@ export const MigrationParityView: React.FC = () => {
           <button
             type="button"
             className="btn-secondary"
+            onClick={handleCleanSlate}
+            disabled={cleaning || extracting || loading}
+            style={{ borderColor: 'rgba(244, 63, 94, 0.4)', color: '#fda4af' }}
+            title="Drop modern MongoDB collections to demonstrate empty Day 0 state"
+          >
+            <Trash2 size={15} className={cleaning ? 'animate-spin' : ''} />
+            <span>{cleaning ? 'Resetting...' : 'Reset to Empty'}</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn-secondary"
             onClick={handleTriggerExtraction}
             disabled={extracting || loading}
-            title="Re-run idempotent extraction of legacy records into MongoDB"
+            title="Run baseline extraction of legacy records into MongoDB"
           >
             <Database size={15} className={extracting ? 'animate-spin' : ''} />
             <span>{extracting ? 'Extracting...' : 'Sync Baseline'}</span>

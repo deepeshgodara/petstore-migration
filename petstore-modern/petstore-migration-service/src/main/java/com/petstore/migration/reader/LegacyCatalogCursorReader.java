@@ -36,7 +36,7 @@ public class LegacyCatalogCursorReader {
           + "id.DESCN, id.ATTR1, COALESCE(inv.QUANTITY, 0) AS QUANTITY "
           + "FROM PUBLIC.ITEM i "
           + "JOIN PUBLIC.ITEM_DETAILS id ON i.ITEMID = id.ITEMID "
-          + "LEFT JOIN PUBLIC.INVENTORY inv ON i.ITEMID = inv.ITEMID "
+          + "LEFT JOIN PUBLIC.INVENTORY inv ON TRIM(i.ITEMID) = TRIM(inv.ITEMID) "
           + "ORDER BY i.ITEMID, id.LOCALE";
 
   private final JdbcTemplate jdbcTemplate;
@@ -139,12 +139,12 @@ public class LegacyCatalogCursorReader {
     @Override
     public LegacyItemRow mapRow(ResultSet rs, int rowNum) throws SQLException {
       return new LegacyItemRow(
-          rs.getString("ITEMID"),
-          rs.getString("PRODUCTID"),
+          rs.getString("ITEMID") != null ? rs.getString("ITEMID").trim() : null,
+          rs.getString("PRODUCTID") != null ? rs.getString("PRODUCTID").trim() : null,
           rs.getBigDecimal("LISTPRICE"),
           rs.getBigDecimal("UNITCOST"),
-          rs.getString("LOCALE"),
-          rs.getString("IMAGE"),
+          rs.getString("LOCALE") != null ? rs.getString("LOCALE").trim() : null,
+          rs.getString("IMAGE") != null ? rs.getString("IMAGE").trim() : null,
           rs.getString("DESCN"),
           rs.getString("ATTR1"),
           rs.getInt("QUANTITY")

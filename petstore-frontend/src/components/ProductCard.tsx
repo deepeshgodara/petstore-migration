@@ -2,6 +2,7 @@ import React from 'react';
 import { Product, Item, Locale } from '../types/catalog';
 import { Eye, Plus } from 'lucide-react';
 import { getProductImageUrl, handleImageError } from '../utils/imageUtils';
+import { formatCurrency } from '../utils/currencyUtils';
 
 interface ProductCardProps {
   product: Product;
@@ -54,7 +55,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div className="product-card-footer">
           <div className="product-price-block">
             <span className="product-price-label">Starts at</span>
-            <span className="product-price-value">${minPrice.toFixed(2)}</span>
+            <span className="product-price-value">{formatCurrency(minPrice, locale)}</span>
           </div>
 
           <div style={{ display: 'flex', gap: '0.4rem' }}>

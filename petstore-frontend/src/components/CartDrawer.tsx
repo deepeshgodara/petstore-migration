@@ -3,6 +3,7 @@ import { CartLineItem } from '../types/cart';
 import { Locale } from '../types/catalog';
 import { X, Trash2, ShoppingBag, ArrowRight, Plus, Minus } from 'lucide-react';
 import { getProductImageUrl, handleImageError } from '../utils/imageUtils';
+import { formatCurrency } from '../utils/currencyUtils';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -202,7 +203,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         {localizedName}
                       </h4>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-                        {localizedAttr} • ${Number(cartItem.item.listPrice).toFixed(2)}
+                        {localizedAttr} • {formatCurrency(cartItem.item.listPrice, locale)}
                       </div>
 
                       {/* Quantity Controls */}
@@ -260,7 +261,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         </div>
 
                         <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-emerald)', marginLeft: 'auto' }}>
-                          ${lineTotal.toFixed(2)}
+                          {formatCurrency(lineTotal, locale)}
                         </span>
 
                         <button
@@ -300,11 +301,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
                 <span>{titles.subtotal}</span>
-                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>${subtotal.toFixed(2)}</span>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatCurrency(subtotal, locale)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
                 <span>{titles.tax}</span>
-                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>${tax.toFixed(2)}</span>
+                <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{formatCurrency(tax, locale)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
                 <span>{titles.shipping}</span>
@@ -321,7 +322,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 }}
               >
                 <span>{titles.total}</span>
-                <span style={{ color: 'var(--accent-emerald)' }}>${total.toFixed(2)}</span>
+                <span style={{ color: 'var(--accent-emerald)' }}>{formatCurrency(total, locale)}</span>
               </div>
             </div>
 

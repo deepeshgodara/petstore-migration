@@ -64,7 +64,7 @@ public class CatalogTransformationProcessor {
       for (LegacyItemRow itemRow : itemRows) {
         itemBuilders.computeIfAbsent(itemRow.itemId(), id -> new ItemBuilder(id, itemRow.productId()))
             .addTranslation(itemRow.locale(), itemRow.attribute1(), itemRow.image(), itemRow.description())
-            .setPricingAndStock(itemRow.listPrice(), itemRow.unitCost(), itemRow.inventoryQuantity());
+            .setPricingAndStock(itemRow.listPrice(), itemRow.unitCost(), itemRow.inventoryQuantity(), itemRow.locale());
       }
     }
 
@@ -154,10 +154,15 @@ public class CatalogTransformationProcessor {
     private final String itemId;
     private final String productId;
     private final Map<String, String> attributes = new LinkedHashMap<>();
+    private final Map<String, java.math.BigDecimal> listPrices = new LinkedHashMap<>();
+    private final Map<String, java.math.BigDecimal> unitCosts = new LinkedHashMap<>();
+    private final Map<String, String> descriptions = new LinkedHashMap<>();
     private java.math.BigDecimal listPrice = java.math.BigDecimal.ZERO;
     private java.math.BigDecimal unitCost = java.math.BigDecimal.ZERO;
     private String image;
     private int inventoryQuantity;
+
+    private boolean canonicalPricingSet = false;
 
     ItemBuilder(String itemId, String productId) {
       this.itemId = itemId;
@@ -165,8 +170,11 @@ public class CatalogTransformationProcessor {
     }
 
     ItemBuilder addTranslation(String locale, String attribute, String image, String description) {
-      if (attribute != null && !attribute.isBlank()) {
+      if (attribute != null && !attribute.isBlank() && locale != null) {
         attributes.put(locale, attribute);
+      }
+      if (description != null && !description.isBlank() && locale != null) {
+        descriptions.put(locale, description);
       }
       if (this.image == null && image != null && !image.isBlank()) {
         this.image = image;
@@ -174,15 +182,47 @@ public class CatalogTransformationProcessor {
       return this;
     }
 
-    ItemBuilder setPricingAndStock(java.math.BigDecimal listPrice, java.math.BigDecimal unitCost, int stock) {
-      this.listPrice = listPrice;
-      this.unitCost = unitCost;
+    ItemBuilder setPricingAndStock(java.math.BigDecimal listPrice, java.math.BigDecimal unitCost, int stock, String locale) {
+      if (locale != null) {
+        if (listPrice != null) {
+          listPrices.put(locale, listPrice);
+        }
+        if (unitCost != null) {
+          unitCosts.put(locale, unitCost);
+        }
+      }
+      // Prioritize canonical en_US (USD) currency for base scalar fallback
+      if (!canonicalPricingSet || "en_US".equalsIgnoreCase(locale)) {
+        if (listPrice != null) {
+          this.listPrice = listPrice;
+        }
+        if (unitCost != null) {
+          this.unitCost = unitCost;
+        }
+        if ("en_US".equalsIgnoreCase(locale)) {
+          canonicalPricingSet = true;
+        }
+      }
       this.inventoryQuantity = stock;
       return this;
     }
 
+    ItemBuilder setPricingAndStock(java.math.BigDecimal listPrice, java.math.BigDecimal unitCost, int stock) {
+      return setPricingAndStock(listPrice, unitCost, stock, "en_US");
+    }
+
     ItemDocument build() {
-      return new ItemDocument(itemId, listPrice, unitCost, attributes, image, inventoryQuantity);
+      return new ItemDocument(
+          itemId,
+          listPrice,
+          unitCost,
+          attributes,
+          image,
+          inventoryQuantity,
+          listPrices,
+          unitCosts,
+          descriptions
+      );
     }
   }
 }
