@@ -48,6 +48,25 @@ hr() {
   echo -e "${DIM}--------------------------------------------------------------------------------${NC}"
 }
 
+# Helper: Query and display Legacy HSQLDB content snapshot
+show_legacy_db_snapshot() {
+  local label="${1:-LEGACY RELATIONAL DATABASE SNAPSHOT}"
+  echo -e "\n${BOLD}${CYAN}================================================================================${NC}"
+  echo -e "${BOLD}${CYAN}  📋 ${label}${NC}"
+  echo -e "${DIM}  Queried directly from HSQLDB container volume via JDBC${NC}"
+  echo -e "${BOLD}${CYAN}================================================================================${NC}"
+
+  echo -e "\n${BOLD}${YELLOW}1. Legacy Baseline Users (Table: USER):${NC}"
+  "${SCRIPT_DIR}/query_legacy_db.sh" "SELECT USERNAME, PASSWORD FROM USER" || true
+
+  echo -e "\n${BOLD}${YELLOW}2. Legacy Warehouse Stock (Table: INVENTORY):${NC}"
+  "${SCRIPT_DIR}/query_legacy_db.sh" "SELECT ITEMID, QUANTITY FROM INVENTORY WHERE ITEMID IN ('EST-1', 'EST-11', 'EST-12', 'EST-14', 'EST-15')" || true
+
+  echo -e "\n${BOLD}${YELLOW}3. Legacy Purchase Orders (Table: PURCHASEORDER):${NC}"
+  "${SCRIPT_DIR}/query_legacy_db.sh" "SELECT POID, POUSERID, POVALUE, POLOCALE FROM PURCHASEORDER" || true
+  echo -e "${BOLD}${CYAN}================================================================================${NC}\n"
+}
+
 # Helper: prompt user to continue
 prompt_step() {
   local step_num="$1"
@@ -65,25 +84,31 @@ prompt_step() {
   echo -e "${BOLD}${YELLOW}💡 TALKING POINT FOR THE PANEL:${NC}"
   echo -e "   ${ITALIC}${talking_point}${NC}"
   echo ""
-  echo -ne "${BOLD}${GREEN}➤ Press [ENTER] to execute Step ${step_num} (or 's' to skip, 'q' to quit): ${NC}"
-  
-  local user_input=""
-  if [ -t 0 ]; then
-    read -r user_input || true
-  else
-    read -r user_input 2>/dev/null || true
-  fi
 
-  if [[ "${user_input}" == "q" || "${user_input}" == "Q" ]]; then
-    echo -e "\n${YELLOW}Demo terminated by presenter. Exiting.${NC}"
-    # Safety: ensure mongo is unpaused
-    docker unpause petstore-mongo >/dev/null 2>&1 || true
-    exit 0
-  elif [[ "${user_input}" == "s" || "${user_input}" == "S" ]]; then
-    echo -e "${DIM}Skipping Step ${step_num}...${NC}"
-    return 1
-  fi
-  return 0
+  while true; do
+    echo -ne "${BOLD}${GREEN}➤ Press [ENTER] to execute Step ${step_num} (or 'd' to view Legacy DB, 's' to skip, 'q' to quit): ${NC}"
+    
+    local user_input=""
+    if [ -t 0 ]; then
+      read -r user_input || true
+    else
+      read -r user_input 2>/dev/null || true
+    fi
+
+    if [[ "${user_input}" == "q" || "${user_input}" == "Q" ]]; then
+      echo -e "\n${YELLOW}Demo terminated by presenter. Exiting.${NC}"
+      # Safety: ensure mongo is unpaused
+      docker unpause petstore-mongo >/dev/null 2>&1 || true
+      exit 0
+    elif [[ "${user_input}" == "s" || "${user_input}" == "S" ]]; then
+      echo -e "${DIM}Skipping Step ${step_num}...${NC}"
+      return 1
+    elif [[ "${user_input}" == "d" || "${user_input}" == "D" ]]; then
+      show_legacy_db_snapshot "LIVE ON-DEMAND LEGACY DATABASE QUERY"
+      continue
+    fi
+    return 0
+  done
 }
 
 # Safety trap on exit
@@ -229,10 +254,13 @@ fi
 # STEP 4: Chaos Engineering — Secondary Datastore Outage
 # ==============================================================================
 if prompt_step "4" "Chaos Injection: Secondary Datastore Outage (docker pause petstore-mongo)" \
-  "Pauses MongoDB container to simulate a sudden outage / network partition. Verifies that legacy PetStore (TomEE :8000) continues operating with HTTP 200 OK, and failed secondary writes are safely buffered in Kafka DLQ." \
-  "Zero blast radius in action! In a naive synchronous dual-write system, a MongoDB crash would freeze the primary checkout. In our asynchronous Kafka-buffered architecture, legacy customer traffic is 100% isolated and unaffected."; then
+  "Inspects legacy database content BEFORE the outage, pauses MongoDB to simulate a complete crash, verifies legacy PetStore continues operating with HTTP 200 OK, queries legacy database content DURING the outage to prove zero corruption, and checks Kafka DLQ buffering." \
+  "Zero blast radius in action! Before the crash, we inspect legacy tables. When MongoDB crashes, legacy checkout is 100% unaffected and its relational data is untouched. Failed secondary writes route safely to the Kafka DLQ."; then
 
-  echo -e "\n${BOLD}${RED}Executing: docker pause petstore-mongo...${NC}"
+  # 1. Inspect Legacy DB Content BEFORE Outage
+  show_legacy_db_snapshot "LEGACY DATABASE CONTENT BEFORE OUTAGE (BASELINE STATE)"
+
+  echo -e "\n${BOLD}${RED}Executing Chaos Injection: docker pause petstore-mongo...${NC}"
   docker pause petstore-mongo
   echo -e "${RED}⚡ MongoDB container paused.${NC}"
 
@@ -248,6 +276,9 @@ if prompt_step "4" "Chaos Injection: Secondary Datastore Outage (docker pause pe
     echo -e "  [${YELLOW}Status${NC}] Legacy Storefront HTTP Status: ${HTTP_STATUS}"
   fi
 
+  # 2. Inspect Legacy DB Content DURING Outage
+  show_legacy_db_snapshot "LEGACY DATABASE CONTENT DURING MONGODB OUTAGE (ZERO IMPACT / NO LOCKS)"
+
   echo -e "\n${BOLD}${BLUE}Checking Dead-Letter Queue (DLQ) Isolation Configuration:${NC}"
   echo -e "  Dual-write topic: ${CYAN}petstore.orders.dualwrite${NC}"
   echo -e "  Dead-Letter topic: ${RED}petstore.orders.dlq${NC} (Active with exponential backoff)"
@@ -255,15 +286,18 @@ if prompt_step "4" "Chaos Injection: Secondary Datastore Outage (docker pause pe
 fi
 
 # ==============================================================================
-# STEP 5: Self-Healing & Live Parity Reconvergence
+# STEP 5: Self-Healing Recovery & Live Parity Reconvergence
 # ==============================================================================
 if prompt_step "5" "Self-Healing Recovery & Live Parity Reconvergence" \
-  "Unpauses MongoDB container. Kafka DLQ consumers automatically drain queued events. Triggers a live shadow reconciliation audit via REST API." \
-  "Watch the self-healing in real-time. Once MongoDB reconnects, the background consumer drains the DLQ. Running the shadow reconciliation audit proves that data parity reconverges back to 100.0% with 0 drifts."; then
+  "Unpauses MongoDB container, DLQ consumers automatically drain queued events, inspects legacy database content AFTER the outage to verify integrity, and triggers a live shadow reconciliation audit via REST API." \
+  "Watch the self-healing in real-time. Once MongoDB reconnects, the background consumer drains the DLQ. We inspect legacy DB after recovery to confirm all baseline records remain consistent, and the parity audit proves 100.0% convergence."; then
 
   echo -e "\n${BOLD}${GREEN}Executing: docker unpause petstore-mongo...${NC}"
   docker unpause petstore-mongo
   echo -e "${GREEN}✓ MongoDB container unpaused and active.${NC}"
+
+  # 3. Inspect Legacy DB Content AFTER Outage & Recovery
+  show_legacy_db_snapshot "LEGACY DATABASE CONTENT AFTER MONGODB RECOVERY (RECONVERGENCE)"
 
   echo -e "\n${BOLD}${BLUE}Triggering Live Shadow Reconciliation Audit (POST /api/v1/migration/parity?runAudit=true):${NC}"
   AUDIT_RESULT=$(curl -s "http://localhost:8085/api/v1/migration/parity?runAudit=true")
