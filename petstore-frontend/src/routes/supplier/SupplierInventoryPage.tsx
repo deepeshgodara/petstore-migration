@@ -148,7 +148,10 @@ export const SupplierInventoryPage: React.FC = () => {
         const matchesSku = item.itemId.toLowerCase().includes(q);
         const matchesProduct = item.productName.toLowerCase().includes(q);
         const matchesAttr = (item.attribute || '').toLowerCase().includes(q);
-        if (!matchesSku && !matchesProduct && !matchesAttr) return false;
+        const matchesLocalizedAttrs =
+          item.attributes &&
+          Object.values(item.attributes).some((attr) => attr.toLowerCase().includes(q));
+        if (!matchesSku && !matchesProduct && !matchesAttr && !matchesLocalizedAttrs) return false;
       }
 
       return true;

@@ -84,14 +84,28 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
       const matchDesc = (p.description || '').toLowerCase().includes(q);
       const matchId = p.id.toLowerCase().includes(q);
       const matchCat = p.categoryId.toLowerCase().includes(q);
+      const matchLocalizedNames =
+        p.names && Object.values(p.names).some((name) => name.toLowerCase().includes(q));
+      const matchLocalizedDescs =
+        p.descriptions && Object.values(p.descriptions).some((desc) => desc.toLowerCase().includes(q));
       const matchItems =
         p.items &&
         p.items.some(
           (item) =>
             item.itemId.toLowerCase().includes(q) ||
-            (item.attribute && item.attribute.toLowerCase().includes(q))
+            (item.attribute && item.attribute.toLowerCase().includes(q)) ||
+            (item.attributes &&
+              Object.values(item.attributes).some((attr) => attr.toLowerCase().includes(q)))
         );
-      return matchName || matchDesc || matchId || matchCat || matchItems;
+      return (
+        matchName ||
+        matchDesc ||
+        matchId ||
+        matchCat ||
+        matchLocalizedNames ||
+        matchLocalizedDescs ||
+        matchItems
+      );
     });
   }, [products, searchQuery]);
 
