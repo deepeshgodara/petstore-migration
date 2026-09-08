@@ -1,4 +1,9 @@
-<!DOCTYPE html>
+#!/usr/bin/env python3
+"""
+Builds the 20-slide interactive presentation index.html for Sun Java Pet Store modernization.
+"""
+
+HTML_CONTENT = """<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -1033,4 +1038,10 @@
     showSlide(1);
   </script>
 </body>
-</html>\n
+</html>
+"""
+
+with open("docs/presentation/index.html", "w") as f:
+    f.write(HTML_CONTENT.strip() + "\\n")
+
+print("Successfully wrote 20 slides to docs/presentation/index.html")
