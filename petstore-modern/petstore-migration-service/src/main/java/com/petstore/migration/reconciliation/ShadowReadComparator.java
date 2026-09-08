@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -39,6 +40,7 @@ public class ShadowReadComparator {
   private final LegacyUserCursorReader userReader;
   private final MongoTemplate mongoTemplate;
   private final MigrationParityMetrics metrics;
+  private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
   @Value("${migration.shadow-reconciliation.drift-tolerance-cents:1}")
   private int driftToleranceCents;
@@ -63,23 +65,26 @@ public class ShadowReadComparator {
    * @return ComparisonResult detailing match status or specific discrepancies
    */
   public ComparisonResult compareOrder(String orderId) {
-    long startNanos = System.nanoTime();
-    List<DiscrepancyDetail> discrepancies = new ArrayList<>();
-
     Optional<OrderDocument> legacyOrderOpt = orderReader.readCompleteOrdersAsDocuments()
         .stream()
         .filter(o -> orderId.equals(o.getId()))
         .findFirst();
 
     OrderDocument mongoOrder = mongoTemplate.findById(orderId, OrderDocument.class, "petstore_orders");
+    return compareOrderInternal(orderId, legacyOrderOpt.orElse(null), mongoOrder);
+  }
 
-    if (legacyOrderOpt.isEmpty() && mongoOrder == null) {
+  public ComparisonResult compareOrderInternal(String orderId, OrderDocument legacyOrder, OrderDocument mongoOrder) {
+    long startNanos = System.nanoTime();
+    List<DiscrepancyDetail> discrepancies = new ArrayList<>();
+
+    if (legacyOrder == null && mongoOrder == null) {
       long duration = System.nanoTime() - startNanos;
       metrics.recordShadowComparison(true, duration);
       return ComparisonResult.match("ORDER", orderId, duration);
     }
 
-    if (legacyOrderOpt.isEmpty()) {
+    if (legacyOrder == null) {
       discrepancies.add(new DiscrepancyDetail(
           "existence",
           "ABSENT",
@@ -96,7 +101,6 @@ public class ShadowReadComparator {
           "Order exists in legacy relational store but has not replicated to MongoDB"
       ));
     } else {
-      OrderDocument legacyOrder = legacyOrderOpt.get();
 
       // 1. Audit status parity
       if (legacyOrder.getStatus() != mongoOrder.getStatus()) {
@@ -164,23 +168,34 @@ public class ShadowReadComparator {
    * @return ComparisonResult detailing catalog parity
    */
   public ComparisonResult compareProduct(String productId) {
-    long startNanos = System.nanoTime();
-    List<DiscrepancyDetail> discrepancies = new ArrayList<>();
-
     List<LegacyProductRow> legacyRows = catalogReader.readAllProducts()
         .stream()
         .filter(p -> productId.equals(p.productId()))
         .toList();
 
-    ProductDocument mongoProduct = mongoTemplate.findById(productId, ProductDocument.class, "petstore_products");
+    List<LegacyItemRow> legacyItems = catalogReader.readAllItems().stream()
+        .filter(i -> productId.equals(i.productId()))
+        .toList();
 
-    if (legacyRows.isEmpty() && mongoProduct == null) {
+    ProductDocument mongoProduct = mongoTemplate.findById(productId, ProductDocument.class, "petstore_products");
+    return compareProductInternal(productId, legacyRows, legacyItems, mongoProduct);
+  }
+
+  public ComparisonResult compareProductInternal(
+      String productId,
+      List<LegacyProductRow> legacyRows,
+      List<LegacyItemRow> legacyItems,
+      ProductDocument mongoProduct) {
+    long startNanos = System.nanoTime();
+    List<DiscrepancyDetail> discrepancies = new ArrayList<>();
+
+    if ((legacyRows == null || legacyRows.isEmpty()) && mongoProduct == null) {
       long duration = System.nanoTime() - startNanos;
       metrics.recordShadowComparison(true, duration);
       return ComparisonResult.match("PRODUCT", productId, duration);
     }
 
-    if (legacyRows.isEmpty()) {
+    if (legacyRows == null || legacyRows.isEmpty()) {
       discrepancies.add(new DiscrepancyDetail(
           "existence", "ABSENT", "PRESENT", "ORPHAN_DOCUMENT", "Product in Mongo but absent in legacy DB"));
     } else if (mongoProduct == null) {
@@ -199,11 +214,7 @@ public class ShadowReadComparator {
       }
 
       // Verify SKU item pricing across all currencies and inventory quantity against legacy DB
-      List<LegacyItemRow> legacyItems = catalogReader.readAllItems().stream()
-          .filter(i -> productId.equals(i.productId()))
-          .toList();
-
-      if (mongoProduct.getItems() != null && !legacyItems.isEmpty()) {
+      if (mongoProduct.getItems() != null && legacyItems != null && !legacyItems.isEmpty()) {
         Map<String, Integer> legacyStockMap = legacyItems.stream()
             .collect(Collectors.toMap(LegacyItemRow::itemId, LegacyItemRow::inventoryQuantity, (a, b) -> a));
 
@@ -257,30 +268,50 @@ public class ShadowReadComparator {
   }
 
   /**
-   * Performs an exhaustive parity comparison across all orders in the system.
+   * Performs an exhaustive parity comparison across all orders, users, and catalog products.
+   * Utilizes pre-indexed ID-keyed in-memory hash maps to achieve O(N) linear performance.
    *
-   * @return list of ComparisonResult for every relational order
+   * @return list of ComparisonResult for all audited entities
    */
   public List<ComparisonResult> compareAllOrders() {
+    List<ComparisonResult> results = new ArrayList<>();
+
+    // 1. O(N) Order Audits with ID-keyed map
     List<OrderDocument> legacyOrders = orderReader.readCompleteOrdersAsDocuments();
-    List<ComparisonResult> results = new ArrayList<>(legacyOrders.stream()
-        .map(o -> compareOrder(o.getId()))
-        .toList());
+    Map<String, OrderDocument> mongoOrders = mongoTemplate.findAll(OrderDocument.class, "petstore_orders")
+        .stream()
+        .collect(Collectors.toMap(OrderDocument::getId, o -> o, (a, b) -> a));
 
-    // Also include all legacy users in reconciliation audits
+    for (OrderDocument legacyOrder : legacyOrders) {
+      results.add(compareOrderInternal(legacyOrder.getId(), legacyOrder, mongoOrders.get(legacyOrder.getId())));
+    }
+
+    // 2. O(M) User Audits with ID-keyed map
     List<LegacyUserRow> legacyUsers = userReader.readAllUsers();
+    Map<String, UserDocument> mongoUsers = mongoTemplate.findAll(UserDocument.class, "petstore_users")
+        .stream()
+        .collect(Collectors.toMap(u -> u.getUsername().toLowerCase(), u -> u, (a, b) -> a));
+
     for (LegacyUserRow u : legacyUsers) {
-      results.add(compareUser(u.username()));
+      results.add(compareUserInternal(u.username(), u, mongoUsers.get(u.username().toLowerCase())));
     }
 
-    // Also include all products in reconciliation audits to continuously verify categories, SKU prices, and inventory stock
+    // 3. O(P) Product & Inventory Audits with grouped SKU item maps
     List<LegacyProductRow> legacyProducts = catalogReader.readAllProducts();
-    java.util.Set<String> auditedProductIds = new java.util.HashSet<>();
-    for (LegacyProductRow p : legacyProducts) {
-      if (auditedProductIds.add(p.productId())) {
-        results.add(compareProduct(p.productId()));
-      }
+    Map<String, List<LegacyProductRow>> productsByProductId = legacyProducts.stream()
+        .collect(Collectors.groupingBy(LegacyProductRow::productId));
+    Map<String, List<LegacyItemRow>> itemsByProductId = catalogReader.readAllItems().stream()
+        .collect(Collectors.groupingBy(LegacyItemRow::productId));
+    Map<String, ProductDocument> mongoProducts = mongoTemplate.findAll(ProductDocument.class, "petstore_products")
+        .stream()
+        .collect(Collectors.toMap(ProductDocument::getId, p -> p, (a, b) -> a));
+
+    for (Map.Entry<String, List<LegacyProductRow>> entry : productsByProductId.entrySet()) {
+      String productId = entry.getKey();
+      results.add(compareProductInternal(productId, entry.getValue(),
+          itemsByProductId.getOrDefault(productId, List.of()), mongoProducts.get(productId)));
     }
+
     return results;
   }
 
@@ -291,23 +322,26 @@ public class ShadowReadComparator {
    * @return ComparisonResult detailing match status or discrepancies
    */
   public ComparisonResult compareUser(String username) {
-    long startNanos = System.nanoTime();
-    List<DiscrepancyDetail> discrepancies = new ArrayList<>();
-
     Optional<LegacyUserRow> legacyUserOpt = userReader.readAllUsers()
         .stream()
         .filter(u -> username.equalsIgnoreCase(u.username()))
         .findFirst();
 
     UserDocument mongoUser = mongoTemplate.findById(username, UserDocument.class, "petstore_users");
+    return compareUserInternal(username, legacyUserOpt.orElse(null), mongoUser);
+  }
 
-    if (legacyUserOpt.isEmpty() && mongoUser == null) {
+  public ComparisonResult compareUserInternal(String username, LegacyUserRow legacy, UserDocument mongoUser) {
+    long startNanos = System.nanoTime();
+    List<DiscrepancyDetail> discrepancies = new ArrayList<>();
+
+    if (legacy == null && mongoUser == null) {
       long duration = System.nanoTime() - startNanos;
       metrics.recordShadowComparison(true, duration);
       return ComparisonResult.match("USER", username, duration);
     }
 
-    if (legacyUserOpt.isEmpty()) {
+    if (legacy == null) {
       // User registered directly in MongoDB
       long duration = System.nanoTime() - startNanos;
       metrics.recordShadowComparison(true, duration);
@@ -318,8 +352,14 @@ public class ShadowReadComparator {
       discrepancies.add(new DiscrepancyDetail(
           "existence", "PRESENT", "ABSENT", "MISSING_DOCUMENT", "User in legacy database but missing in MongoDB"));
     } else {
-      LegacyUserRow legacy = legacyUserOpt.get();
-      if (!Objects.equals(legacy.password(), mongoUser.getPassword())) {
+      String mongoPassword = mongoUser.getPassword();
+      boolean passwordMatches;
+      if (mongoPassword != null && (mongoPassword.startsWith("$2a$") || mongoPassword.startsWith("$2b$") || mongoPassword.startsWith("$2y$"))) {
+        passwordMatches = passwordEncoder.matches(legacy.password(), mongoPassword);
+      } else {
+        passwordMatches = Objects.equals(legacy.password(), mongoPassword);
+      }
+      if (!passwordMatches) {
         discrepancies.add(new DiscrepancyDetail(
             "password", legacy.password(), mongoUser.getPassword(), "PASSWORD_MISMATCH", "Password hash mismatch"));
       }

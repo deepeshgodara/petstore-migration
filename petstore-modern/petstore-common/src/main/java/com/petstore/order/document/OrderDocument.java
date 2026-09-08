@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -29,6 +30,9 @@ public class OrderDocument implements Serializable {
 
   @Id
   private String id;
+
+  @Version
+  private Long version;
 
   @Indexed
   private String userId;
@@ -83,6 +87,14 @@ public class OrderDocument implements Serializable {
 
   public void setId(String id) {
     this.id = id;
+  }
+
+  public Long getVersion() {
+    return version;
+  }
+
+  public void setVersion(Long version) {
+    this.version = version;
   }
 
   public String getUserId() {

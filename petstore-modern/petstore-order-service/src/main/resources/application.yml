@@ -27,6 +27,10 @@ spring:
       properties:
         spring.json.trusted.packages: "com.petstore.*"
 
+migration:
+  dualwrite:
+    enabled: true
+
 app:
   kafka:
     topics:
@@ -40,7 +44,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics,prometheus,env,refresh
   endpoint:
     health:
       show-details: always

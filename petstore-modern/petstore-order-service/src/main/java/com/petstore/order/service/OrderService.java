@@ -1,8 +1,11 @@
 package com.petstore.order.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.petstore.common.event.OrderDualWriteEvent;
 import com.petstore.order.document.LineItemDocument;
 import com.petstore.order.document.OrderDocument;
 import com.petstore.order.document.OrderStatus;
+import com.petstore.order.document.OutboxDocument;
 import com.petstore.order.document.PaymentDocument;
 import com.petstore.order.dto.AdminAnalyticsResponse;
 import com.petstore.order.dto.CategorySalesMetric;
@@ -12,6 +15,7 @@ import com.petstore.order.dto.OrderSummaryResponse;
 import com.petstore.order.kafka.DualWritePublisher;
 import com.petstore.order.kafka.OrderEventProducer;
 import com.petstore.order.repository.OrderRepository;
+import com.petstore.order.repository.OutboxRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
@@ -34,10 +38,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Service managing order lifecycle operations and orchestrating asynchronous
- * dual-write event dispatching and business domain event streaming.
+ * dual-write event dispatching, transactional outbox persistence, and business domain event streaming.
  */
 @Service
 public class OrderService {
@@ -47,14 +52,28 @@ public class OrderService {
   private final OrderRepository orderRepository;
   private final DualWritePublisher dualWritePublisher;
   private final OrderEventProducer orderEventProducer;
+  private final OutboxRepository outboxRepository;
+  private final ObjectMapper objectMapper;
+
+  @org.springframework.beans.factory.annotation.Autowired
+  public OrderService(
+      OrderRepository orderRepository,
+      DualWritePublisher dualWritePublisher,
+      OrderEventProducer orderEventProducer,
+      OutboxRepository outboxRepository,
+      ObjectMapper objectMapper) {
+    this.orderRepository = orderRepository;
+    this.dualWritePublisher = dualWritePublisher;
+    this.orderEventProducer = orderEventProducer;
+    this.outboxRepository = outboxRepository;
+    this.objectMapper = objectMapper != null ? objectMapper : new ObjectMapper();
+  }
 
   public OrderService(
       OrderRepository orderRepository,
       DualWritePublisher dualWritePublisher,
       OrderEventProducer orderEventProducer) {
-    this.orderRepository = orderRepository;
-    this.dualWritePublisher = dualWritePublisher;
-    this.orderEventProducer = orderEventProducer;
+    this(orderRepository, dualWritePublisher, orderEventProducer, null, new ObjectMapper());
   }
 
   /**
@@ -64,6 +83,7 @@ public class OrderService {
    * @param request checkout request payload
    * @return the newly placed OrderDocument
    */
+  @Transactional
   public OrderDocument placeOrder(CreateOrderRequest request) {
     if (request == null) {
       throw new IllegalArgumentException("CreateOrderRequest cannot be null");
@@ -125,11 +145,13 @@ public class OrderService {
   }
 
   /**
-   * Persists a new customer order and triggers an asynchronous dual-write event to Kafka.
+   * Persists a new customer order atomically with a transactional outbox event
+   * and triggers an asynchronous dual-write event to Kafka.
    *
    * @param order the order to create
    * @return the saved order document
    */
+  @Transactional
   public OrderDocument createOrder(OrderDocument order) {
     if (order == null) {
       throw new IllegalArgumentException("Order document cannot be null");
@@ -154,6 +176,20 @@ public class OrderService {
     log.info("Successfully persisted order [{}] with status [{}]",
         savedOrder.getId(), savedOrder.getStatus());
 
+    // Atomically persist to Transactional Outbox
+    if (outboxRepository != null) {
+      try {
+        OrderDualWriteEvent event = OrderDualWriteEvent.ofCreated(savedOrder, "petstore-order-service");
+        String payload = objectMapper.writeValueAsString(event);
+        OutboxDocument outbox = new OutboxDocument(
+            "ORDER", savedOrder.getId(), "ORDER_CREATED", "petstore.orders.dualwrite", payload);
+        outboxRepository.save(outbox);
+        log.debug("Persisted transactional outbox record [{}] for order [{}]", outbox.getId(), savedOrder.getId());
+      } catch (Exception e) {
+        log.warn("Failed to persist outbox record for order [{}]: {}", savedOrder.getId(), e.getMessage());
+      }
+    }
+
     // Trigger dual-write asynchronously
     dualWritePublisher.publishOrderCreated(savedOrder);
 
@@ -164,14 +200,15 @@ public class OrderService {
   }
 
   /**
-   * Updates an order's lifecycle status, triggers an asynchronous dual-write event to Kafka,
-   * and publishes domain state transition events.
+   * Updates an order's lifecycle status atomically with a transactional outbox event,
+   * triggers an asynchronous dual-write event to Kafka, and publishes domain state transition events.
    *
    * @param orderId the order identifier
    * @param newStatus the target order status
    * @return the updated order document
    * @throws NoSuchElementException if the order is not found
    */
+  @Transactional
   public OrderDocument updateOrderStatus(String orderId, OrderStatus newStatus) {
     if (orderId == null || orderId.isBlank()) {
       throw new IllegalArgumentException("Order ID cannot be null or blank");
@@ -189,6 +226,22 @@ public class OrderService {
 
     OrderDocument updatedOrder = orderRepository.save(order);
     log.info("Updated order [{}] status from [{}] to [{}]", orderId, previousStatus, newStatus);
+
+    // Atomically persist to Transactional Outbox
+    if (outboxRepository != null) {
+      try {
+        OrderDualWriteEvent event = OrderDualWriteEvent.ofStatusUpdated(
+            updatedOrder, previousStatus, newStatus, "petstore-order-service");
+        String payload = objectMapper.writeValueAsString(event);
+        OutboxDocument outbox = new OutboxDocument(
+            "ORDER", updatedOrder.getId(), "ORDER_STATUS_UPDATED", "petstore.orders.dualwrite", payload);
+        outboxRepository.save(outbox);
+        log.debug("Persisted transactional outbox record [{}] for order status update [{}]",
+            outbox.getId(), updatedOrder.getId());
+      } catch (Exception e) {
+        log.warn("Failed to persist outbox record for status update [{}]: {}", updatedOrder.getId(), e.getMessage());
+      }
+    }
 
     // Trigger dual-write asynchronously
     dualWritePublisher.publishOrderStatusUpdated(updatedOrder, previousStatus, newStatus);

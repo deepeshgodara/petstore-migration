@@ -118,4 +118,34 @@ class UserServiceTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Invalid username or credentials");
   }
+
+  @Test
+  @DisplayName("Should reject authentication with blank password preventing 2002 auth bypass")
+  void shouldRejectBlankPasswordOnLogin() {
+    assertThatThrownBy(() -> userService.login(new UserLoginRequest("shopper", "   ")))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Password must not be blank");
+  }
+
+  @Test
+  @DisplayName("Should reject authentication with null password")
+  void shouldRejectNullPasswordOnLogin() {
+    assertThatThrownBy(() -> userService.login(new UserLoginRequest("shopper", null)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Password must not be blank");
+  }
+
+  @Test
+  @DisplayName("Should authenticate user with existing BCrypt hash")
+  void shouldAuthenticateUserWithBcryptHash() {
+    org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder encoder =
+        new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+    String hashed = encoder.encode("securePass123");
+
+    UserDocument user = new UserDocument("alice", hashed, "alice@test.com", "Alice", "Test", "555-0000", "ROLE_CUSTOMER");
+    when(userRepository.findByUsernameIgnoreCase("alice")).thenReturn(Optional.of(user));
+
+    UserResponse response = userService.login(new UserLoginRequest("alice", "securePass123"));
+    assertThat(response.username()).isEqualTo("alice");
+  }
 }

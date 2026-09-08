@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 /**
@@ -26,6 +27,7 @@ public class UserService {
 
   private final UserRepository userRepository;
   private final UserEventProducer userEventProducer;
+  private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
   public UserService(UserRepository userRepository, UserEventProducer userEventProducer) {
     this.userRepository = userRepository;
@@ -55,9 +57,11 @@ public class UserService {
       default -> "ROLE_CUSTOMER";
     };
 
+    String encodedPassword = passwordEncoder.encode(req.password());
+
     UserDocument user = new UserDocument(
         req.username(),
-        req.password(),
+        encodedPassword,
         req.email().isBlank() ? req.username() + "@example.com" : req.email(),
         req.givenName(),
         req.familyName(),
@@ -102,20 +106,40 @@ public class UserService {
   }
 
   /**
-   * Authenticates user against MongoDB petstore_users.
+   * Authenticates user against MongoDB petstore_users with BCrypt support
+   * and lazy upgrade for legacy plaintext credentials.
    */
   public UserResponse login(UserLoginRequest req) {
-    if (req.username().isBlank()) {
+    if (req.username() == null || req.username().isBlank()) {
       throw new IllegalArgumentException("Username must not be blank");
     }
+    if (req.password() == null || req.password().isBlank()) {
+      throw new IllegalArgumentException("Password must not be blank");
+    }
 
-    UserDocument user = userRepository.findByUsernameIgnoreCase(req.username())
+    UserDocument user = userRepository.findByUsernameIgnoreCase(req.username().trim())
         .orElseThrow(() -> new IllegalArgumentException("Invalid username or credentials"));
 
-    if (req.password() != null && !req.password().isBlank()) {
-      if (!req.password().equals(user.getPassword())) {
-        throw new IllegalArgumentException("Invalid username or credentials");
-      }
+    String stored = user.getPassword();
+    boolean matches = false;
+    boolean needsUpgrade = false;
+
+    if (stored != null && (stored.startsWith("$2a$") || stored.startsWith("$2b$") || stored.startsWith("$2y$"))) {
+      matches = passwordEncoder.matches(req.password(), stored);
+    } else if (stored != null && stored.equals(req.password())) {
+      matches = true;
+      needsUpgrade = true;
+    }
+
+    if (!matches) {
+      throw new IllegalArgumentException("Invalid username or credentials");
+    }
+
+    if (needsUpgrade) {
+      user.setPassword(passwordEncoder.encode(req.password()));
+      user.setUpdatedAt(Instant.now());
+      userRepository.save(user);
+      log.info("Lazily upgraded legacy plaintext password to BCrypt for user [{}]", user.getUsername());
     }
 
     log.info("User [{}] successfully authenticated against MongoDB", user.getUsername());
