@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Category, Product, Item, Locale } from '../types/catalog';
 import { catalogService } from '../services/catalogService';
-import { HeroBanner } from './HeroBanner';
 import { CategoryNav } from './CategoryNav';
 import { ProductCard } from './ProductCard';
 import { ProductDetailModal } from './ProductDetailModal';
@@ -97,10 +96,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   }, [products, searchQuery]);
 
   return (
-    <section>
-      {/* Hero Presentation */}
-      <HeroBanner locale={locale} totalProducts={products.length} />
-
+    <section style={{ paddingTop: '1rem' }}>
       {/* Category Filter Pills */}
       <CategoryNav
         categories={categories}
