@@ -49,6 +49,8 @@ This modernization implements the **Strangler Fig Application Pattern** with ent
 
 ## 🏛️ Target System Architecture
 
+> 📘 **Detailed Architectural Deep-Dive**: For comprehensive class-level interactions and end-to-end sequence diagrams across all API flows (Checkout, BCrypt Auth, Admin Approval, Supplier Inventory, Shadow Reconciliation, and DLQ Fault Isolation), see the **[Class & Sequence Diagrams Reference](docs/architecture/class_and_sequence_diagrams.md)**.
+
 ```mermaid
 flowchart TB
     subgraph Clients["Presentation Tier"]
