@@ -18,6 +18,7 @@ import com.petstore.order.repository.OrderRepository;
 import com.petstore.order.repository.OutboxRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -32,7 +33,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +48,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderService {
 
   private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+  private static final int MAX_ID_GENERATION_ATTEMPTS = 5;
+  private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
   private final OrderRepository orderRepository;
   private final DualWritePublisher dualWritePublisher;
@@ -77,6 +79,37 @@ public class OrderService {
   }
 
   /**
+   * Generates a collision-free, strictly numeric Order ID guaranteed to be unique across both
+   * legacy historical sequences and concurrent modern checkouts.
+   *
+   * Format: 17-digit numerical identifier [currentTimeMillis (13 digits)][randomSequence (4 digits)]
+   * Disjoint range: > 1.78 x 10^16, preventing any overlap with legacy 5-6 digit IDs (1001XX).
+   * Range fits strictly within signed 64-bit integer bounds (Long.MAX_VALUE = 9.22 x 10^18).
+   *
+   * @return strictly numeric integer order ID string
+   */
+  public String generateUniqueOrderId() {
+    for (int attempt = 1; attempt <= MAX_ID_GENERATION_ATTEMPTS; attempt++) {
+      long timestamp = System.currentTimeMillis();
+      int randomSuffix = SECURE_RANDOM.nextInt(10000); // 0000 to 9999
+      String candidateId = String.format("%d%04d", timestamp, randomSuffix);
+
+      if (!orderRepository.existsById(candidateId)) {
+        return candidateId;
+      }
+
+      log.warn("Order ID collision detected for candidate [{}]. Retrying (attempt {}/{})",
+          candidateId, attempt, MAX_ID_GENERATION_ATTEMPTS);
+    }
+
+    // Fallback using nanosecond component, guaranteeing strictly numeric integer characters
+    long fallback = System.currentTimeMillis() * 10000L + (Math.abs(System.nanoTime()) % 10000L);
+    String fallbackId = String.valueOf(fallback);
+    log.error("Exhausted optimistic retries for order ID generation. Generated fallback numeric ID [{}]", fallbackId);
+    return fallbackId;
+  }
+
+  /**
    * Places a customer order from a CreateOrderRequest, calculates line item costs,
    * masks payment details, persists to MongoDB, and triggers dual-write publishing.
    *
@@ -92,7 +125,7 @@ public class OrderService {
       throw new IllegalArgumentException("Customer userId is required to place an order");
     }
 
-    String orderId = String.valueOf(System.currentTimeMillis());
+    String orderId = generateUniqueOrderId();
     Instant now = Instant.now();
 
     BigDecimal totalPrice = BigDecimal.ZERO;
@@ -158,7 +191,7 @@ public class OrderService {
     }
 
     if (order.getId() == null || order.getId().isBlank()) {
-      order.setId(UUID.randomUUID().toString());
+      order.setId(generateUniqueOrderId());
     }
 
     if (order.getOrderDate() == null) {

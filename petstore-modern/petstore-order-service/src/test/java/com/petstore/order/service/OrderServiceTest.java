@@ -174,4 +174,38 @@ class OrderServiceTest {
     assertThat(fishMetric.get().totalRevenue()).isEqualByComparingTo("100.00");
     assertThat(fishMetric.get().unitsSold()).isEqualTo(2);
   }
+
+  @Test
+  @DisplayName("Should generate strictly numeric integer order ID disjoint from legacy format")
+  void shouldGenerateStrictlyNumericIntegerOrderId() {
+    when(orderRepository.existsById(any(String.class))).thenReturn(false);
+
+    String orderId = orderService.generateUniqueOrderId();
+
+    assertThat(orderId).isNotBlank();
+    assertThat(orderId).matches("^\\d+$");
+    assertThat(orderId.length()).isGreaterThanOrEqualTo(16);
+
+    // Verify it is parseable as a 64-bit signed integer (Long)
+    long numericVal = Long.parseLong(orderId);
+    assertThat(numericVal).isPositive();
+
+    // Verify disjoint range: modern timestamp-based ID is > 10^16, legacy is < 10^7
+    assertThat(numericVal).isGreaterThan(100_000_000_000_000L);
+  }
+
+  @Test
+  @DisplayName("Should retry when candidate order ID collides with existing document")
+  void shouldRetryWhenCandidateOrderIdCollides() {
+    // First candidate collides, second candidate is available
+    when(orderRepository.existsById(any(String.class)))
+        .thenReturn(true)
+        .thenReturn(false);
+
+    String orderId = orderService.generateUniqueOrderId();
+
+    assertThat(orderId).isNotBlank();
+    assertThat(orderId).matches("^\\d+$");
+    verify(orderRepository, org.mockito.Mockito.atLeast(2)).existsById(any(String.class));
+  }
 }
